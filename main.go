@@ -34,6 +34,8 @@ func init() {
 		log.Fatal(err)
 	}
 
+	db.SetMaxOpenConns(1)
+
 	queryStmt, err = db.Prepare(queryString)
 	if err != nil {
 		log.Fatal(err)
