@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"database/sql"
+	"encoding/csv"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 
@@ -17,7 +20,7 @@ var dbPath string
 var queryString string
 var port uint
 
-var help = `SQLiteQueryServer
+var helpMessege = `SQLiteQueryServer help messege:
 
 `
 
@@ -47,10 +50,31 @@ func main() {
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 }
 
 func query(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path != "/query" {
+		http.Error(w, helpMessege, http.StatusNotFound)
+		return
+	}
+	if r.Method != "POST" {
+		http.Error(w, helpMessege, http.StatusMethodNotAllowed)
+		return
+	}
 
+	reqReader := csv.NewReader(bufio.NewReader(r.Body))
+	for {
+		line, err := reqReader.Read()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			http.Error(w,
+				fmt.Sprintf("Error reading request body: %v\n\n%s", err, helpMessege), http.StatusInternalServerError)
+			return
+		}
+
+		rows, err := queryStmt.Query(line...)
+	}
 }
