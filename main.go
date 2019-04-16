@@ -64,6 +64,8 @@ func query(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+
 	reqReader := csv.NewReader(bufio.NewReader(r.Body))
 	for {
 		csvLine, err := reqReader.Read()
@@ -81,5 +83,29 @@ func query(w http.ResponseWriter, r *http.Request) {
 		}
 
 		rows, err := queryStmt.Query(queryParams...)
+		if err != nil {
+			http.Error(w,
+				fmt.Sprintf("Error executing query for params %v: %v\n\n%s", csvLine, err, helpMessege), http.StatusInternalServerError)
+			return
+		}
+		defer rows.Close()
+
+		for rows.Next() {
+			var row []interface{}
+			err = rows.Scan(&row)
+			if err != nil {
+				http.Error(w,
+					fmt.Sprintf("Error reading query results for params %v: %v\n\n%s", csvLine, err, helpMessege), http.StatusInternalServerError)
+				return
+			}
+
+			// TODO print row to w (as part of a json [{"in":csvLine, "out":[[],[],...,[]]}])
+		}
+		err = rows.Err()
+		if err != nil {
+			http.Error(w,
+				fmt.Sprintf("Error executing query: %v\n\n%s", err, helpMessege), http.StatusInternalServerError)
+			return
+		}
 	}
 }
