@@ -66,7 +66,7 @@ func query(w http.ResponseWriter, r *http.Request) {
 
 	reqReader := csv.NewReader(bufio.NewReader(r.Body))
 	for {
-		line, err := reqReader.Read()
+		csvLine, err := reqReader.Read()
 		if err == io.EOF {
 			break
 		} else if err != nil {
@@ -75,6 +75,11 @@ func query(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		rows, err := queryStmt.Query(line...)
+		queryParams := make([]interface{}, len(csvLine))
+		for i := range csvLine {
+			queryParams[i] = csvLine[i]
+		}
+
+		rows, err := queryStmt.Query(queryParams...)
 	}
 }
