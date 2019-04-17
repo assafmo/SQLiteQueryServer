@@ -136,6 +136,7 @@ func query(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	outpoutEncoder := json.NewEncoder(w)
+	// start printing the outer array
 	fmt.Fprintf(w, "[")
 
 	reqCsvReader := csv.NewReader(r.Body)
@@ -144,7 +145,7 @@ func query(w http.ResponseWriter, r *http.Request) {
 	isFirstQuery := true
 	for {
 		csvLine, err := reqCsvReader.Read()
-		if err == io.EOF || err == http.ErrBodyReadAfterClose /*last line without \n*/ {
+		if err == io.EOF || err == http.ErrBodyReadAfterClose /* last line is without \n */ {
 			break
 		} else if err != nil {
 			http.Error(w,
@@ -153,6 +154,7 @@ func query(w http.ResponseWriter, r *http.Request) {
 		}
 
 		if !isFirstQuery {
+			// print comma between queries results
 			fmt.Fprintf(w, ",")
 		}
 		isFirstQuery = false
@@ -177,16 +179,18 @@ func query(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// start printing a query result
 		fmt.Fprintf(w, `{"in":`)
 		outpoutEncoder.Encode(csvLine)
 		fmt.Fprintf(w, ",")
 		fmt.Fprintf(w, `"headers":`)
 		outpoutEncoder.Encode(cols)
-		fmt.Fprintf(w, `,"out":[`)
+		fmt.Fprintf(w, `,"out":[`) // start printing the out rows array
 
 		isFirstRow := true
 		for rows.Next() {
 			if !isFirstRow {
+				// print comma between rows
 				fmt.Fprintf(w, ",")
 			}
 			isFirstRow = false
@@ -205,6 +209,7 @@ func query(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			// print a result row
 			outpoutEncoder.Encode(row)
 		}
 		err = rows.Err()
@@ -214,7 +219,10 @@ func query(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
+		// finish printing a query result
 		fmt.Fprintf(w, "]}")
 	}
+
+	// finish printing the outer array
 	fmt.Fprintf(w, "]\n")
 }
