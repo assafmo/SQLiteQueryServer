@@ -21,7 +21,7 @@ var dbPath string
 var queryString string
 var serverPort uint
 
-var dbSchema string
+var queryParamsCount int
 
 var helpMessege string
 
@@ -47,25 +47,69 @@ func init() {
 
 	fmt.Printf(`DB:
 	%s
+
 `, dbPath)
 	fmt.Printf(`Port:
 	%d
+
 `, serverPort)
 
 	helpMessege += fmt.Sprintf(`Query:
 	%s
-`, queryString)
-	helpMessege += fmt.Sprintf(`Params count (question marks):
-	%d
-`, strings.Count(queryString, "?"))
-	helpMessege += fmt.Sprintf(`Usage:
-	curl "http://$ADDRESS:%d/query" -d "$PARAM_1,$PARAM_2,...,$PARAM_N"
 
-	- Request must be a HTTP POST to /query
-	- Request body must be a valid CSV
-	- Request body must not have a CSV header
-	- Each request body line is a different query
-	- Each request body param corresponds to a query param (a question mark in the query string)
+`, queryString)
+
+	queryParamsCount = strings.Count(queryString, "?")
+	helpMessege += fmt.Sprintf(`Params count (question marks in query):
+	%d
+
+`, queryParamsCount)
+
+	helpMessege += fmt.Sprintf(`Request examples:
+	$ echo -e "$QUERY1_PARAM1,$QUERY1_PARAM2\n$QUERY2_PARAM1,$QUERY2_PARAM2" curl "http://$ADDRESS:%d/query" --data-binary @-
+	$ curl "http://$ADDRESS:%d/query" -d "$PARAM_1,$PARAM_2,...,$PARAM_N"
+
+	- Request must be a HTTP POST to "http://$ADDRESS:%d/query".
+	- Request body must be a valid CSV.
+	- Request body must not have a CSV header.
+	- Each request body line is a different query.
+	- Each param in a line corresponds to a query param (a question mark in the query string).
+
+`, serverPort, serverPort, serverPort)
+	helpMessege += fmt.Sprintf(`Response example:
+	$ echo -e "github.com\none.one.one.one\ngoogle-public-dns-a.google.com" | curl "http://$ADDRESS:%d/query" --data-binary @-
+	[
+		{
+			"in": ["github.com"],
+			"headers": ["address","domain_name"],
+			"out": [
+				["192.30.253.112","github.com"],
+				["192.30.253.113","github.com"]
+			]
+		},
+		{
+			"in": ["one.one.one.one"],
+			"headers": ["address","domain_name"],
+			"out": [
+				["1.1.1.1","one.one.one.one"]
+			]
+		},
+		{
+			"in": ["google-public-dns-a.google.com"],
+			"headers": ["address","domain_name"],
+			"out": [
+				["8.8.8.8","google-public-dns-a.google.com"]
+			]
+		}
+	]
+
+	- Response is a JSON array (Content-Type: application/json).
+	- Each element in the array:
+		- Is a result of a query
+		- Has an "in" fields which is an array of the input params (a request body line).
+		- Has an "headers" fields which is an array of headers of the SQL query result.
+		- Has an "out" field which is an array of arrays of results. Each inner array is a result row.
+	- Element #1 is the result of query #1, Element #2 is the result of query #2, and so forth.
 `, serverPort)
 
 	fmt.Printf(helpMessege)
@@ -172,5 +216,5 @@ func query(w http.ResponseWriter, r *http.Request) {
 
 		fmt.Fprintf(w, "]}")
 	}
-	fmt.Fprintf(w, "]")
+	fmt.Fprintf(w, "]\n")
 }
