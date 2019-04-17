@@ -1,7 +1,7 @@
 # SQLiteQueryServer
 
 Bulk query SQLite database over the network.  
-Way much faster than [SQLiteProxy](https://github.com/assafmo/SQLiteProxy)!
+Way faster than [SQLiteProxy](https://github.com/assafmo/SQLiteProxy)!
 
 # Installation
 
@@ -28,11 +28,11 @@ Usage of SQLiteQueryServer:
 ## Creating a server
 
 ```bash
-SQLiteQueryServer --db ./db_example/ip_dns.db --query "SELECT * FROM ip_dns WHERE dns = ?" --port 8080
+SQLiteQueryServer --db "$DB_PATH" --query "$PARAMETERIZED_SQL_QUERY" --port "$PORT"
 ```
 
 ```bash
-SQLiteQueryServer --db "$DB_PATH" --query "$PARAMETERIZED_SQL_QUERY" --port "$PORT"
+SQLiteQueryServer --db ./db_example/ip_dns.db --query "SELECT * FROM ip_dns WHERE dns = ?" --port 8080
 ```
 
 This will expose the `./db_example/ip_dns.db` database with the query `SELECT * FROM ip_dns WHERE dns = ?` on port `8080`.  
