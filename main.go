@@ -26,9 +26,9 @@ var queryParamsCount int
 var helpMessege string
 
 func init() {
-	flag.StringVar(&dbPath, "db", "", "Path to DB")
-	flag.StringVar(&queryString, "query", "", "The SQL query")
-	flag.UintVar(&serverPort, "port", 80, "Port of the http server")
+	flag.StringVar(&dbPath, "db", "", "Filesystem path of the SQLite database")
+	flag.StringVar(&queryString, "query", "", "SQL query to prepare for")
+	flag.UintVar(&serverPort, "port", 80, "HTTP port to listen on")
 
 	flag.Parse()
 
@@ -194,7 +194,7 @@ func buildHelpMessege() {
 	[
 		{
 			"in": ["github.com"],
-			"headers": ["address","domain_name"],
+			"headers": ["ip","dns"],
 			"out": [
 				["192.30.253.112","github.com"],
 				["192.30.253.113","github.com"]
@@ -202,14 +202,14 @@ func buildHelpMessege() {
 		},
 		{
 			"in": ["one.one.one.one"],
-			"headers": ["address","domain_name"],
+			"headers": ["ip","dns"],
 			"out": [
 				["1.1.1.1","one.one.one.one"]
 			]
 		},
 		{
 			"in": ["google-public-dns-a.google.com"],
-			"headers": ["address","domain_name"],
+			"headers": ["ip","dns"],
 			"out": [
 				["8.8.8.8","google-public-dns-a.google.com"]
 			]

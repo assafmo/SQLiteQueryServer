@@ -1,2 +1,4 @@
 debug
 .vscode
+*wal
+*shm
