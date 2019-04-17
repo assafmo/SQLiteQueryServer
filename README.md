@@ -1,6 +1,7 @@
 # SQLiteQueryServer
 
-Bulk query SQLite database over the network.
+Bulk query SQLite database over the network.  
+Way much faster than [SQLiteProxy](https://github.com/assafmo/SQLiteProxy)!
 
 # Installation
 
@@ -8,7 +9,7 @@ Bulk query SQLite database over the network.
 go get -u github.com/assafmo/SQLiteQueryServer
 ```
 
-This package uses `github.com/mattn/go-sqlite3`. Compilation errors might be solved by reading https://github.com/mattn/go-sqlite3#compilation.
+This package uses `github.com/mattn/go-sqlite3`. Compilation errors might be resolved by reading https://github.com/mattn/go-sqlite3#compilation.
 
 # Usage
 
@@ -24,7 +25,7 @@ Usage of SQLiteQueryServer:
 
 # Examples
 
-## Server
+## Creating a server
 
 ```bash
 SQLiteQueryServer --db ./db_example/ip_dns.db --query "SELECT * FROM ip_dns WHERE dns = ?" --port 8080
@@ -37,7 +38,7 @@ SQLiteQueryServer --db "$DB_PATH" --query "$PARAMETERIZED_SQL_QUERY" --port "$PO
 This will expose the `./db_example/ip_dns.db` database with the query `SELECT * FROM ip_dns WHERE dns = ?` on port `8080`.  
 Requests will need to provide the query parameters.
 
-## Request
+## Querying the server
 
 ```bash
 echo -e "github.com\none.one.one.one\ngoogle-public-dns-a.google.com" | curl "http://localhost:8080/query" --data-binary @-
@@ -57,7 +58,7 @@ curl "http://$ADDRESS:$PORT/query" -d "$PARAM_1,$PARAM_2,...,$PARAM_N"
 - Each request body line is a different query.
 - Each param in a line corresponds to a query param (a question mark in the query string).
 
-## Response
+## Getting a response
 
 ```bash
 echo -e "github.com\none.one.one.one\ngoogle-public-dns-a.google.com" | curl "http://localhost:8080/query" --data-binary @-
