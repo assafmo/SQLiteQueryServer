@@ -40,7 +40,7 @@ func init() {
 	}
 
 	var err error
-	db, err = sql.Open("sqlite3", fmt.Sprintf("file:%s?mode=rw&cache=shared", dbPath))
+	db, err = sql.Open("sqlite3", fmt.Sprintf("file:%s?mode=rw&cache=shared&_journal_mode=WAL", dbPath))
 	if err != nil {
 		log.Fatal(err)
 	}
