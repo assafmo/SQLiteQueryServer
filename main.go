@@ -9,6 +9,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -20,9 +21,9 @@ var dbPath string
 var queryString string
 var serverPort uint
 
-var helpMessege = `SQLiteQueryServer help messege:
+var dbSchema string
 
-`
+var helpMessege string
 
 func init() {
 	flag.StringVar(&dbPath, "db", "", "Path to DB")
@@ -32,7 +33,7 @@ func init() {
 	flag.Parse()
 
 	var err error
-	db, err = sql.Open("sqlite3", fmt.Sprintf("file:%s&mode=rw&cache=shared", dbPath))
+	db, err = sql.Open("sqlite3", fmt.Sprintf("file:%s?mode=rw&cache=shared", dbPath))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -43,13 +44,34 @@ func init() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	fmt.Printf(`DB:
+	%s
+`, dbPath)
+	fmt.Printf(`Port:
+	%d
+`, serverPort)
+
+	helpMessege += fmt.Sprintf(`Query:
+	%s
+`, queryString)
+	helpMessege += fmt.Sprintf(`Params count (question marks):
+	%d
+`, strings.Count(queryString, "?"))
+	helpMessege += fmt.Sprintf(`Usage:
+	curl "http://$ADDRESS:%d/query" -d "$PARAM_1,$PARAM_2,...,$PARAM_N"
+
+	- Request must be a HTTP POST to /query
+	- Request body must be a valid CSV
+	- Request body must not have a CSV header
+	- Each request body line is a different query
+	- Each request body param corresponds to a query param (a question mark in the query string)
+`, serverPort)
+
+	fmt.Printf(helpMessege)
 }
 
 func main() {
-	log.Printf("DB = %s", dbPath)
-	log.Printf("Query = %s", queryString)
-	log.Printf("Port = %d", serverPort)
-
 	http.HandleFunc("/query", query)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", serverPort), nil)
 
