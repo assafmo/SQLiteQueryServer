@@ -105,7 +105,7 @@ func query(w http.ResponseWriter, r *http.Request) {
 		rows, err := queryStmt.Query(queryParams...)
 		if err != nil {
 			http.Error(w,
-				fmt.Sprintf("\n\nError executing query for params %v: %v\n\n%s", csvLine, err, helpMessege), http.StatusInternalServerError)
+				fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessege), http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
@@ -113,7 +113,7 @@ func query(w http.ResponseWriter, r *http.Request) {
 		cols, err := rows.Columns()
 		if err != nil {
 			http.Error(w,
-				fmt.Sprintf("\n\nError executing query for params %v: %v\n\n%s", csvLine, err, helpMessege), http.StatusInternalServerError)
+				fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessege), http.StatusInternalServerError)
 			return
 		}
 
@@ -143,7 +143,7 @@ func query(w http.ResponseWriter, r *http.Request) {
 			err = rows.Scan(pointers...)
 			if err != nil {
 				http.Error(w,
-					fmt.Sprintf("\n\nError reading query results for params %v: %v\n\n%s", csvLine, err, helpMessege), http.StatusInternalServerError)
+					fmt.Sprintf("\n\nError reading query results for params %#v: %v\n\n%s", csvLine, err, helpMessege), http.StatusInternalServerError)
 				return
 			}
 
