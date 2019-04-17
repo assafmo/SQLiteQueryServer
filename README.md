@@ -25,14 +25,14 @@ Usage of SQLiteQueryServer:
 ## Server
 
 ```bash
-SQLiteQueryServer --db ./example/ip_dns.db --query "SELECT * FROM ip_dns WHERE dns = ?" --port 8080
+SQLiteQueryServer --db ./db_example/ip_dns.db --query "SELECT * FROM ip_dns WHERE dns = ?" --port 8080
 ```
 
 ```bash
 SQLiteQueryServer --db "$DB_PATH" --query "$PARAMETERIZED_SQL_QUERY" --port "$PORT"
 ```
 
-This will expose the `./example/ip_dns.db` database with the query `SELECT * FROM ip_dns WHERE dns = ?` on port `8080`.  
+This will expose the `./db_example/ip_dns.db` database with the query `SELECT * FROM ip_dns WHERE dns = ?` on port `8080`.  
 Requests will need to provide the query parameters.
 
 ## Request
