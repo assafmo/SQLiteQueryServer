@@ -8,6 +8,8 @@ Bulk query SQLite database over the network.
 go get -u github.com/assafmo/SQLiteQueryServer
 ```
 
+This package uses `github.com/mattn/go-sqlite3`. Compilation errors might be solved by reading https://github.com/mattn/go-sqlite3#compilation.
+
 # Usage
 
 ```
