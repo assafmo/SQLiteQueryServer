@@ -32,6 +32,13 @@ func init() {
 
 	flag.Parse()
 
+	if queryString == "" {
+		log.Fatal("Must provide --query param")
+	}
+	if dbPath == "" {
+		log.Fatal("Must provide --db param")
+	}
+
 	var err error
 	db, err = sql.Open("sqlite3", fmt.Sprintf("file:%s?mode=rw&cache=shared", dbPath))
 	if err != nil {
