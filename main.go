@@ -18,7 +18,7 @@ var queryStmt *sql.Stmt
 
 var dbPath string
 var queryString string
-var port uint
+var serverPort uint
 
 var helpMessege = `SQLiteQueryServer help messege:
 
@@ -27,7 +27,7 @@ var helpMessege = `SQLiteQueryServer help messege:
 func init() {
 	flag.StringVar(&dbPath, "db", "", "Path to DB")
 	flag.StringVar(&queryString, "query", "", "The SQL query")
-	flag.UintVar(&port, "port", 80, "Port of the http server")
+	flag.UintVar(&serverPort, "port", 80, "Port of the http server")
 
 	flag.Parse()
 
@@ -46,8 +46,12 @@ func init() {
 }
 
 func main() {
+	log.Printf("DB = %s", dbPath)
+	log.Printf("Query = %s", queryString)
+	log.Printf("Port = %d", serverPort)
+
 	http.HandleFunc("/query", query)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	err := http.ListenAndServe(fmt.Sprintf(":%d", serverPort), nil)
 
 	if err != nil {
 		log.Fatal(err)
@@ -99,6 +103,7 @@ func query(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 
+			fmt.Println(row)
 			// TODO print row to w (as part of a json [{"in":csvLine, "out":[[],[],...,[]]}])
 		}
 		err = rows.Err()
