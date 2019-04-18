@@ -9,6 +9,8 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 
 	_ "github.com/mattn/go-sqlite3"
@@ -189,13 +191,34 @@ func query(w http.ResponseWriter, r *http.Request) {
 	wFlusher.Flush()
 }
 
+func countParams() int {
+	rows, err := queryStmt.Query()
+	if err != nil {
+		regex := regexp.MustCompile(`sql: expected (\d+) arguments, got 0`)
+		regexSubmatches := regex.FindAllStringSubmatch(err.Error(), 1)
+		if len(regexSubmatches) != 1 || len(regexSubmatches[0]) != 2 {
+			// this is weird, return best guess
+			return strings.Count(queryString, "?")
+		}
+		count, err := strconv.Atoi(regexSubmatches[0][1])
+		if err != nil {
+			// this is weirder because the regex is \d+
+			// return best guess
+			return strings.Count(queryString, "?")
+		}
+		return count
+	}
+	rows.Close()
+	return 0
+}
+
 func buildHelpMessage() {
 	helpMessage += fmt.Sprintf(`Query:
 	%s
 
 `, queryString)
 
-	queryParamsCount = strings.Count(queryString, "?")
+	queryParamsCount = countParams()
 	helpMessage += fmt.Sprintf(`Params count (question marks in query):
 	%d
 
