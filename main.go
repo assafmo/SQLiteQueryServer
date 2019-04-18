@@ -100,6 +100,7 @@ func query(w http.ResponseWriter, r *http.Request) {
 
 	reqCsvReader := csv.NewReader(r.Body)
 	reqCsvReader.ReuseRecord = true
+	reqCsvReader.FieldsPerRecord = -1
 
 	isFirstQuery := true
 	for {
