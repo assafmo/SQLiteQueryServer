@@ -23,7 +23,7 @@ var serverPort uint
 
 var queryParamsCount int
 
-var helpMessege string
+var helpMessage string
 
 func init() {
 	flag.StringVar(&dbPath, "db", "", "Filesystem path of the SQLite database")
@@ -55,9 +55,9 @@ func init() {
 	fmt.Printf("Database:\n\t%s\n\n", dbPath)
 	fmt.Printf("Port:\n\t%d\n\n", serverPort)
 
-	buildHelpMessege()
+	buildHelpMessage()
 
-	fmt.Printf(helpMessege)
+	fmt.Printf(helpMessage)
 }
 
 func main() {
@@ -71,11 +71,11 @@ func main() {
 
 func query(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/query" {
-		http.Error(w, helpMessege, http.StatusNotFound)
+		http.Error(w, helpMessage, http.StatusNotFound)
 		return
 	}
 	if r.Method != "POST" {
-		http.Error(w, helpMessege, http.StatusMethodNotAllowed)
+		http.Error(w, helpMessage, http.StatusMethodNotAllowed)
 		return
 	}
 
@@ -94,7 +94,7 @@ func query(w http.ResponseWriter, r *http.Request) {
 			break
 		} else if err != nil {
 			http.Error(w,
-				fmt.Sprintf("\n\nError reading request body: %v\n\n%s", err, helpMessege), http.StatusInternalServerError)
+				fmt.Sprintf("\n\nError reading request body: %v\n\n%s", err, helpMessage), http.StatusInternalServerError)
 			return
 		}
 
@@ -112,7 +112,7 @@ func query(w http.ResponseWriter, r *http.Request) {
 		rows, err := queryStmt.Query(queryParams...)
 		if err != nil {
 			http.Error(w,
-				fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessege), http.StatusInternalServerError)
+				fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessage), http.StatusInternalServerError)
 			return
 		}
 		defer rows.Close()
@@ -120,7 +120,7 @@ func query(w http.ResponseWriter, r *http.Request) {
 		cols, err := rows.Columns()
 		if err != nil {
 			http.Error(w,
-				fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessege), http.StatusInternalServerError)
+				fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessage), http.StatusInternalServerError)
 			return
 		}
 
@@ -150,7 +150,7 @@ func query(w http.ResponseWriter, r *http.Request) {
 			err = rows.Scan(pointers...)
 			if err != nil {
 				http.Error(w,
-					fmt.Sprintf("\n\nError reading query results for params %#v: %v\n\n%s", csvLine, err, helpMessege), http.StatusInternalServerError)
+					fmt.Sprintf("\n\nError reading query results for params %#v: %v\n\n%s", csvLine, err, helpMessage), http.StatusInternalServerError)
 				return
 			}
 
@@ -160,7 +160,7 @@ func query(w http.ResponseWriter, r *http.Request) {
 		err = rows.Err()
 		if err != nil {
 			http.Error(w,
-				fmt.Sprintf("\n\nError executing query: %v\n\n%s", err, helpMessege), http.StatusInternalServerError)
+				fmt.Sprintf("\n\nError executing query: %v\n\n%s", err, helpMessage), http.StatusInternalServerError)
 			return
 		}
 
@@ -172,19 +172,19 @@ func query(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "]\n")
 }
 
-func buildHelpMessege() {
-	helpMessege += fmt.Sprintf(`Query:
+func buildHelpMessage() {
+	helpMessage += fmt.Sprintf(`Query:
 	%s
 
 `, queryString)
 
 	queryParamsCount = strings.Count(queryString, "?")
-	helpMessege += fmt.Sprintf(`Params count (question marks in query):
+	helpMessage += fmt.Sprintf(`Params count (question marks in query):
 	%d
 
 `, queryParamsCount)
 
-	helpMessege += fmt.Sprintf(`Request examples:
+	helpMessage += fmt.Sprintf(`Request examples:
 	$ echo -e "$QUERY1_PARAM1,$QUERY1_PARAM2\n$QUERY2_PARAM1,$QUERY2_PARAM2" curl "http://$ADDRESS:%d/query" --data-binary @-
 	$ curl "http://$ADDRESS:%d/query" -d "$PARAM_1,$PARAM_2,...,$PARAM_N"
 
@@ -196,7 +196,7 @@ func buildHelpMessege() {
 
 `, serverPort, serverPort, serverPort)
 
-	helpMessege += fmt.Sprintf(`Response example:
+	helpMessage += fmt.Sprintf(`Response example:
 	$ echo -e "github.com\none.one.one.one\ngoogle-public-dns-a.google.com" | curl "http://$ADDRESS:%d/query" --data-binary @-
 	[
 		{
