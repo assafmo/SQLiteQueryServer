@@ -1,5 +1,5 @@
 debug
-SQLiteQueryServer
+SQLiteQueryServer*
 .vscode
 *wal
 *shm
