@@ -86,7 +86,7 @@ echo -e "github.com\none.one.one.one\ngoogle-public-dns-a.google.com" | curl "ht
 ]
 ```
 
-- Response is a JSON array (Content-Type: application/json).
+- Response is a JSON array (`Content-Type: application/json`).
 - Each element in the array:
   - Is a result of a query
   - Has an "in" fields which is an array of the input params (a request body line).

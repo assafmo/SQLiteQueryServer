@@ -14,6 +14,8 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
+const version = "1.0.0"
+
 var db *sql.DB
 var queryStmt *sql.Stmt
 
@@ -70,6 +72,8 @@ func main() {
 }
 
 func query(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Server", "SQLiteQueryServer v"+version)
+
 	if r.URL.Path != "/query" {
 		http.Error(w, helpMessage, http.StatusNotFound)
 		return
