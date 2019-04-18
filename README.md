@@ -5,11 +5,14 @@ Way faster than [SQLiteProxy](https://github.com/assafmo/SQLiteProxy)!
 
 # Installation
 
-```bash
-go get -u github.com/assafmo/SQLiteQueryServer
-```
+- Download a precompiled binary from https://github.com/assafmo/SQLiteQueryServer/releases
+- Or use `go get`:
 
-This package uses `github.com/mattn/go-sqlite3`. Compilation errors might be resolved by reading https://github.com/mattn/go-sqlite3#compilation.
+  ```bash
+  go get -u github.com/assafmo/SQLiteQueryServer
+  ```
+
+  This package uses `github.com/mattn/go-sqlite3`. Compilation errors might be resolved by reading https://github.com/mattn/go-sqlite3#compilation. Also
 
 # Usage
 
