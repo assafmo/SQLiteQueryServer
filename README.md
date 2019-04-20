@@ -92,7 +92,7 @@ echo -e "github.com\none.one.one.one\ngoogle-public-dns-a.google.com" | curl "ht
 - If response status is 200 (OK), response is a JSON array (`Content-Type: application/json`).
 - Each element in the array:
   - Is a result of a query
-  - Has an "in" fields which is an array of the input params (a request body line).
-  - Has an "headers" fields which is an array of headers of the SQL query result.
+  - Has an "in" field which is an array of the input params (a request body line).
+  - Has an "headers" field which is an array of headers of the SQL query result.
   - Has an "out" field which is an array of arrays of results. Each inner array is a result row.
 - Element #1 is the result of query #1, Element #2 is the result of query #2, and so forth.
