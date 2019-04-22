@@ -3,6 +3,8 @@
 Bulk query SQLite database over the network.  
 Way faster than [SQLiteProxy](https://github.com/assafmo/SQLiteProxy)!
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/assafmo/SQLiteQueryServer)](https://goreportcard.com/report/github.com/assafmo/SQLiteQueryServer)
+
 # Installation
 
 - Download a precompiled binary from https://github.com/assafmo/SQLiteQueryServer/releases
