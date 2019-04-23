@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"encoding/csv"
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -13,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	json "github.com/json-iterator/go"
 	_ "github.com/mattn/go-sqlite3"
 )
 
