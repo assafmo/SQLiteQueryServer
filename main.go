@@ -65,6 +65,9 @@ func init() {
 }
 
 func main() {
+	log.Printf("Starting server on port %d...\n", serverPort)
+	log.Printf("Starting server with query '%s'...\n", queryString)
+
 	http.HandleFunc("/query", query)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", serverPort), nil)
 
