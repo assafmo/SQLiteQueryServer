@@ -107,3 +107,24 @@ func TestBadPathRequest(t *testing.T) {
 		t.Fatalf(`resp.StatusCode (%d) != http.StatusNotFound (%d)`, resp.StatusCode, http.StatusNotFound)
 	}
 }
+
+func TestBadMethodRequest(t *testing.T) {
+	log.SetOutput(&bytes.Buffer{})
+
+	req := httptest.NewRequest("GET",
+		"http://example.org/query",
+		nil)
+	w := httptest.NewRecorder()
+	queryHandler, err := initQueryHandler(dbPath, "SELECT * FROM ip_dns WHERE dns = ?", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queryHandler(w, req)
+
+	resp := w.Result()
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusMethodNotAllowed {
+		t.Fatalf(`resp.StatusCode (%d) != http.StatusMethodNotAllowed (%d)`, resp.StatusCode, http.StatusMethodNotAllowed)
+	}
+}
