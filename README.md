@@ -41,10 +41,10 @@ SQLiteQueryServer --db "$DB_PATH" --query "$PARAMETERIZED_SQL_QUERY" --port "$PO
 ```
 
 ```bash
-SQLiteQueryServer --db ./db_example/ip_dns.db --query "SELECT * FROM ip_dns WHERE dns = ?" --port 8080
+SQLiteQueryServer --db ./test_db/ip_dns.db --query "SELECT * FROM ip_dns WHERE dns = ?" --port 8080
 ```
 
-This will expose the `./db_example/ip_dns.db` database with the query `SELECT * FROM ip_dns WHERE dns = ?` on port `8080`.  
+This will expose the `./test_db/ip_dns.db` database with the query `SELECT * FROM ip_dns WHERE dns = ?` on port `8080`.  
 Requests will need to provide the query parameters.
 
 ## Querying the server
