@@ -12,7 +12,7 @@ import (
 	json "github.com/json-iterator/go"
 )
 
-var dbPath = "./test_db/ip_dns.db"
+var testDbPath = "./test_db/ip_dns.db"
 
 func TestResultCount(t *testing.T) {
 	log.SetOutput(&bytes.Buffer{})
@@ -23,7 +23,7 @@ func TestResultCount(t *testing.T) {
 		"http://example.org/query",
 		strings.NewReader(reqString))
 	w := httptest.NewRecorder()
-	queryHandler, err := initQueryHandler(dbPath, "SELECT * FROM ip_dns WHERE dns = ?", 0)
+	queryHandler, err := initQueryHandler(testDbPath, "SELECT * FROM ip_dns WHERE dns = ?", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -61,7 +61,7 @@ func TestAnswersOrder(t *testing.T) {
 		"http://example.org/query",
 		strings.NewReader(reqString))
 	w := httptest.NewRecorder()
-	queryHandler, err := initQueryHandler(dbPath, "SELECT * FROM ip_dns WHERE dns = ?", 0)
+	queryHandler, err := initQueryHandler(testDbPath, "SELECT * FROM ip_dns WHERE dns = ?", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -107,7 +107,7 @@ func TestAnswersHeaders(t *testing.T) {
 		"http://example.org/query",
 		strings.NewReader(reqString))
 	w := httptest.NewRecorder()
-	queryHandler, err := initQueryHandler(dbPath, "SELECT * FROM ip_dns WHERE dns = ?", 0)
+	queryHandler, err := initQueryHandler(testDbPath, "SELECT * FROM ip_dns WHERE dns = ?", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -156,7 +156,7 @@ func TestAnswersRows(t *testing.T) {
 		"http://example.org/query",
 		strings.NewReader(reqString))
 	w := httptest.NewRecorder()
-	queryHandler, err := initQueryHandler(dbPath, "SELECT * FROM ip_dns WHERE dns = ?", 0)
+	queryHandler, err := initQueryHandler(testDbPath, "SELECT * FROM ip_dns WHERE dns = ?", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -224,7 +224,7 @@ func TestBadParamsCount(t *testing.T) {
 		"http://example.org/query",
 		strings.NewReader(reqString))
 	w := httptest.NewRecorder()
-	queryHandler, err := initQueryHandler(dbPath, "SELECT * FROM ip_dns WHERE dns = ?", 0)
+	queryHandler, err := initQueryHandler(testDbPath, "SELECT * FROM ip_dns WHERE dns = ?", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -257,7 +257,7 @@ func TestBadPathRequest(t *testing.T) {
 		"http://example.org/queri",
 		strings.NewReader(reqString))
 	w := httptest.NewRecorder()
-	queryHandler, err := initQueryHandler(dbPath, "SELECT * FROM ip_dns WHERE dns = ?", 0)
+	queryHandler, err := initQueryHandler(testDbPath, "SELECT * FROM ip_dns WHERE dns = ?", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -278,7 +278,7 @@ func TestBadMethodRequest(t *testing.T) {
 		"http://example.org/query",
 		nil)
 	w := httptest.NewRecorder()
-	queryHandler, err := initQueryHandler(dbPath, "SELECT * FROM ip_dns WHERE dns = ?", 0)
+	queryHandler, err := initQueryHandler(testDbPath, "SELECT * FROM ip_dns WHERE dns = ?", 0)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -289,5 +289,46 @@ func TestBadMethodRequest(t *testing.T) {
 
 	if resp.StatusCode != http.StatusMethodNotAllowed {
 		t.Fatalf(`resp.StatusCode (%d) != http.StatusMethodNotAllowed (%d)`, resp.StatusCode, http.StatusMethodNotAllowed)
+	}
+}
+
+func TestMainDbFileNotThere(t *testing.T) {
+	err := cmd([]string{
+		"--db",
+		"blabla",
+		"--query",
+		"SELECT * FROM ip_dns WHERE dns = ?",
+	})
+	if err == nil {
+		t.Fatal(`Should throw an error`)
+	}
+	if !strings.Contains(err.Error(), "Database file 'blabla' doesn't exist") {
+		t.Fatalf(`Should throw a file doesn't exist error: %v`, err)
+	}
+}
+
+func TestMainEmptyDbParam(t *testing.T) {
+	err := cmd([]string{
+		"--query",
+		"SELECT * FROM ip_dns WHERE dns = ?",
+	})
+	if err == nil {
+		t.Fatal(`Should throw an error`)
+	}
+	if !strings.Contains(err.Error(), "Must provide --db param") {
+		t.Fatalf(`Should throw a "Must provide --db param" error: %v`, err)
+	}
+}
+
+func TestMainEmptyQueryParam(t *testing.T) {
+	err := cmd([]string{
+		"--db",
+		testDbPath,
+	})
+	if err == nil {
+		t.Fatal(`Should throw an error`)
+	}
+	if err == nil || !strings.Contains(err.Error(), "Must provide --query param") {
+		t.Fatalf(`Should throw a "Must provide --query param" error: %v`, err)
 	}
 }

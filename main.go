@@ -8,6 +8,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -19,39 +20,40 @@ import (
 const version = "1.2.0"
 
 func main() {
-	// init
+	err := cmd(os.Args[1:])
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+func cmd(cmdArgs []string) error {
+	// parse cmd args
+	var flagSet = flag.NewFlagSet("cmd flags", flag.ExitOnError)
+
 	var dbPath string
 	var queryString string
 	var serverPort uint
 
-	flag.StringVar(&dbPath, "db", "", "Filesystem path of the SQLite database")
-	flag.StringVar(&queryString, "query", "", "SQL query to prepare for")
-	flag.UintVar(&serverPort, "port", 80, "HTTP port to listen on")
+	flagSet.StringVar(&dbPath, "db", "", "Filesystem path of the SQLite database")
+	flagSet.StringVar(&queryString, "query", "", "SQL query to prepare for")
+	flagSet.UintVar(&serverPort, "port", 80, "HTTP port to listen on")
 
-	flag.Parse()
+	flagSet.Parse(cmdArgs)
 
-	if queryString == "" {
-		log.Fatal("Must provide --query param")
-	}
-	if dbPath == "" {
-		log.Fatal("Must provide --db param")
+	// init db and query
+	queryHandler, err := initQueryHandler(dbPath, queryString, serverPort)
+	if err != nil {
+		return err
 	}
 
 	// start server
 	log.Printf("Starting server on port %d...\n", serverPort)
 	log.Printf("Starting server with query '%s'...\n", queryString)
 
-	queryHandler, err := initQueryHandler(dbPath, queryString, serverPort)
-	if err != nil {
-		log.Fatal(err)
-	}
-
 	http.HandleFunc("/query", queryHandler)
 	err = http.ListenAndServe(fmt.Sprintf(":%d", serverPort), nil)
 
-	if err != nil {
-		log.Fatal(err)
-	}
+	return err
 }
 
 type httpAnswer struct {
@@ -61,6 +63,16 @@ type httpAnswer struct {
 }
 
 func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(w http.ResponseWriter, r *http.Request), error) {
+	if dbPath == "" {
+		return nil, fmt.Errorf("Must provide --db param")
+	}
+	if queryString == "" {
+		return nil, fmt.Errorf("Must provide --query param")
+	}
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("Database file '%s' doesn't exist", dbPath)
+	}
+
 	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?mode=rw&cache=shared&_journal_mode=WAL", dbPath))
 	if err != nil {
 		return nil, err

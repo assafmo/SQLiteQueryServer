@@ -1,4 +1,5 @@
 debug
+debug.test
 SQLiteQueryServer*
 build
 .vscode
