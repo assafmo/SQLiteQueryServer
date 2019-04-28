@@ -133,7 +133,7 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(
 
 			cols, err := rows.Columns()
 			if err != nil {
-				msg := fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessage)
+				msg := fmt.Sprintf("\n\nError reading columns for query with params %#v: %v\n\n%s", csvLine, err, helpMessage)
 				http.Error(w, msg, http.StatusInternalServerError)
 				return
 			}
