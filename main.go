@@ -91,7 +91,6 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(
 		answer := []httpAnswer{}
 
 		reqCsvReader := csv.NewReader(r.Body)
-		reqCsvReader.ReuseRecord = true
 		reqCsvReader.FieldsPerRecord = -1
 
 		for {
