@@ -1,6 +1,12 @@
 #!/bin/bash
 
 # build into ./build/
+
+set -e
+set -v
+
+go test -race ./...
+
 rm -rf build
 mkdir -p build
 
