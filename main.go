@@ -18,18 +18,12 @@ import (
 
 const version = "1.2.0"
 
-var db *sql.DB
-var queryStmt *sql.Stmt
+func main() {
+	// init
+	var dbPath string
+	var queryString string
+	var serverPort uint
 
-var dbPath string
-var queryString string
-var serverPort uint
-
-var queryParamsCount int
-
-var helpMessage string
-
-func init() {
 	flag.StringVar(&dbPath, "db", "", "Filesystem path of the SQLite database")
 	flag.StringVar(&queryString, "query", "", "SQL query to prepare for")
 	flag.UintVar(&serverPort, "port", 80, "HTTP port to listen on")
@@ -43,32 +37,12 @@ func init() {
 		log.Fatal("Must provide --db param")
 	}
 
-	var err error
-	db, err = sql.Open("sqlite3", fmt.Sprintf("file:%s?mode=rw&cache=shared&_journal_mode=WAL", dbPath))
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	db.SetMaxOpenConns(1)
-
-	queryStmt, err = db.Prepare(queryString)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	fmt.Printf("Database:\n\t%s\n\n", dbPath)
-	fmt.Printf("Port:\n\t%d\n\n", serverPort)
-
-	buildHelpMessage()
-
-	fmt.Printf(helpMessage)
-}
-
-func main() {
+	// start server
 	log.Printf("Starting server on port %d...\n", serverPort)
 	log.Printf("Starting server with query '%s'...\n", queryString)
 
-	http.HandleFunc("/query", query)
+	queryHandler := initQueryHandler(dbPath, queryString, serverPort)
+	http.HandleFunc("/query", queryHandler)
 	err := http.ListenAndServe(fmt.Sprintf(":%d", serverPort), nil)
 
 	if err != nil {
@@ -76,119 +50,135 @@ func main() {
 	}
 }
 
-func query(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Server", "SQLiteQueryServer v"+version)
-
-	if r.URL.Path != "/query" {
-		http.Error(w, helpMessage, http.StatusNotFound)
-		return
-	}
-	if r.Method != "POST" {
-		http.Error(w, helpMessage, http.StatusMethodNotAllowed)
-		return
+func initQueryHandler(dbPath string, queryString string, serverPort uint) func(w http.ResponseWriter, r *http.Request) {
+	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?mode=rw&cache=shared&_journal_mode=WAL", dbPath))
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	outpoutEncoder := json.NewEncoder(w)
-	// start printing the outer array
-	fmt.Fprintf(w, "[")
+	db.SetMaxOpenConns(1)
 
-	reqCsvReader := csv.NewReader(r.Body)
-	reqCsvReader.ReuseRecord = true
-	reqCsvReader.FieldsPerRecord = -1
+	queryStmt, err := db.Prepare(queryString)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	isFirstQuery := true
-	for {
-		csvLine, err := reqCsvReader.Read()
-		if err == io.EOF || err == http.ErrBodyReadAfterClose /* last line is without \n */ {
-			break
-		} else if err != nil {
-			http.Error(w,
-				fmt.Sprintf("\n\nError reading request body: %v\n\n%s", err, helpMessage), http.StatusInternalServerError)
+	helpMessage := buildHelpMessage("", queryString, queryStmt, serverPort)
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Server", "SQLiteQueryServer v"+version)
+
+		if r.URL.Path != "/query" {
+			http.Error(w, helpMessage, http.StatusNotFound)
+			return
+		}
+		if r.Method != "POST" {
+			http.Error(w, helpMessage, http.StatusMethodNotAllowed)
 			return
 		}
 
-		if !isFirstQuery {
-			// print comma between queries results
-			fmt.Fprintf(w, ",")
-		}
-		isFirstQuery = false
+		w.Header().Set("Content-Type", "application/json")
+		outpoutEncoder := json.NewEncoder(w)
+		// start printing the outer array
+		fmt.Fprintf(w, "[")
 
-		queryParams := make([]interface{}, len(csvLine))
-		for i := range csvLine {
-			queryParams[i] = csvLine[i]
-		}
+		reqCsvReader := csv.NewReader(r.Body)
+		reqCsvReader.ReuseRecord = true
+		reqCsvReader.FieldsPerRecord = -1
 
-		rows, err := queryStmt.Query(queryParams...)
-		if err != nil {
-			http.Error(w,
-				fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessage), http.StatusInternalServerError)
-			return
-		}
-		defer rows.Close()
-
-		cols, err := rows.Columns()
-		if err != nil {
-			http.Error(w,
-				fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessage), http.StatusInternalServerError)
-			return
-		}
-
-		// start printing a query result
-		fmt.Fprintf(w, `{"in":`)
-		outpoutEncoder.Encode(csvLine)
-		fmt.Fprintf(w, ",")
-		fmt.Fprintf(w, `"headers":`)
-		outpoutEncoder.Encode(cols)
-		fmt.Fprintf(w, `,"out":[`) // start printing the out rows array
-
-		isFirstRow := true
-		for rows.Next() {
-			if !isFirstRow {
-				// print comma between rows
-				fmt.Fprintf(w, ",")
-			}
-			isFirstRow = false
-
-			row := make([]interface{}, len(cols))
-			pointers := make([]interface{}, len(row))
-
-			for i := range row {
-				pointers[i] = &row[i]
-			}
-
-			err = rows.Scan(pointers...)
-			if err != nil {
+		isFirstQuery := true
+		for {
+			csvLine, err := reqCsvReader.Read()
+			if err == io.EOF || err == http.ErrBodyReadAfterClose /* last line is without \n */ {
+				break
+			} else if err != nil {
 				http.Error(w,
-					fmt.Sprintf("\n\nError reading query results for params %#v: %v\n\n%s", csvLine, err, helpMessage), http.StatusInternalServerError)
+					fmt.Sprintf("\n\nError reading request body: %v\n\n%s", err, helpMessage), http.StatusInternalServerError)
 				return
 			}
 
-			// print a result row
-			outpoutEncoder.Encode(row)
-		}
-		err = rows.Err()
-		if err != nil {
-			http.Error(w,
-				fmt.Sprintf("\n\nError executing query: %v\n\n%s", err, helpMessage), http.StatusInternalServerError)
-			return
+			if !isFirstQuery {
+				// print comma between queries results
+				fmt.Fprintf(w, ",")
+			}
+			isFirstQuery = false
+
+			queryParams := make([]interface{}, len(csvLine))
+			for i := range csvLine {
+				queryParams[i] = csvLine[i]
+			}
+
+			rows, err := queryStmt.Query(queryParams...)
+			if err != nil {
+				http.Error(w,
+					fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessage), http.StatusInternalServerError)
+				return
+			}
+			defer rows.Close()
+
+			cols, err := rows.Columns()
+			if err != nil {
+				http.Error(w,
+					fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessage), http.StatusInternalServerError)
+				return
+			}
+
+			// start printing a query result
+			fmt.Fprintf(w, `{"in":`)
+			outpoutEncoder.Encode(csvLine)
+			fmt.Fprintf(w, ",")
+			fmt.Fprintf(w, `"headers":`)
+			outpoutEncoder.Encode(cols)
+			fmt.Fprintf(w, `,"out":[`) // start printing the out rows array
+
+			isFirstRow := true
+			for rows.Next() {
+				if !isFirstRow {
+					// print comma between rows
+					fmt.Fprintf(w, ",")
+				}
+				isFirstRow = false
+
+				row := make([]interface{}, len(cols))
+				pointers := make([]interface{}, len(row))
+
+				for i := range row {
+					pointers[i] = &row[i]
+				}
+
+				err = rows.Scan(pointers...)
+				if err != nil {
+					http.Error(w,
+						fmt.Sprintf("\n\nError reading query results for params %#v: %v\n\n%s", csvLine, err, helpMessage), http.StatusInternalServerError)
+					return
+				}
+
+				// print a result row
+				outpoutEncoder.Encode(row)
+			}
+			err = rows.Err()
+			if err != nil {
+				http.Error(w,
+					fmt.Sprintf("\n\nError executing query: %v\n\n%s", err, helpMessage), http.StatusInternalServerError)
+				return
+			}
+
+			// finish printing a query result
+			fmt.Fprintf(w, "]}")
 		}
 
-		// finish printing a query result
-		fmt.Fprintf(w, "]}")
+		// finish printing the outer array
+		fmt.Fprintf(w, "]\n")
 	}
-
-	// finish printing the outer array
-	fmt.Fprintf(w, "]\n")
 }
 
-func buildHelpMessage() {
+func buildHelpMessage(helpMessage string, queryString string, queryStmt *sql.Stmt, serverPort uint) string {
 	helpMessage += fmt.Sprintf(`Query:
 	%s
 
 `, queryString)
 
-	queryParamsCount = countParams()
+	queryParamsCount := countParams(queryStmt, queryString)
 	helpMessage += fmt.Sprintf(`Params count (question marks in query):
 	%d
 
@@ -241,9 +231,11 @@ func buildHelpMessage() {
 		- Has an "out" field which is an array of arrays of results. Each inner array is a result row.
 	- Element #1 is the result of query #1, Element #2 is the result of query #2, and so forth.
 `, serverPort)
+
+	return helpMessage
 }
 
-func countParams() int {
+func countParams(queryStmt *sql.Stmt, queryString string) int {
 	rows, err := queryStmt.Query()
 	if err != nil {
 		regex := regexp.MustCompile(`sql: expected (\d+) arguments, got 0`)
