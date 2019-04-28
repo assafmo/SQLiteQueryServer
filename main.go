@@ -41,26 +41,37 @@ func main() {
 	log.Printf("Starting server on port %d...\n", serverPort)
 	log.Printf("Starting server with query '%s'...\n", queryString)
 
-	queryHandler := initQueryHandler(dbPath, queryString, serverPort)
+	queryHandler, err := initQueryHandler(dbPath, queryString, serverPort)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	http.HandleFunc("/query", queryHandler)
-	err := http.ListenAndServe(fmt.Sprintf(":%d", serverPort), nil)
+	err = http.ListenAndServe(fmt.Sprintf(":%d", serverPort), nil)
 
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func initQueryHandler(dbPath string, queryString string, serverPort uint) func(w http.ResponseWriter, r *http.Request) {
+type httpAnswer struct {
+	In      []string        `json:"in"`
+	Headers []string        `json:"headers"`
+	Out     [][]interface{} `json:"out"`
+}
+
+func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(w http.ResponseWriter, r *http.Request), error) {
 	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?mode=rw&cache=shared&_journal_mode=WAL", dbPath))
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
 
 	db.SetMaxOpenConns(1)
 
 	queryStmt, err := db.Prepare(queryString)
 	if err != nil {
-		log.Fatal(err)
+		db.Close()
+		return nil, err
 	}
 
 	helpMessage := buildHelpMessage("", queryString, queryStmt, serverPort)
@@ -77,16 +88,12 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) func(w
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		outpoutEncoder := json.NewEncoder(w)
-		// start printing the outer array
-		fmt.Fprintf(w, "[")
+		answer := []httpAnswer{}
 
 		reqCsvReader := csv.NewReader(r.Body)
 		reqCsvReader.ReuseRecord = true
 		reqCsvReader.FieldsPerRecord = -1
 
-		isFirstQuery := true
 		for {
 			csvLine, err := reqCsvReader.Read()
 			if err == io.EOF || err == http.ErrBodyReadAfterClose /* last line is without \n */ {
@@ -97,11 +104,8 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) func(w
 				return
 			}
 
-			if !isFirstQuery {
-				// print comma between queries results
-				fmt.Fprintf(w, ",")
-			}
-			isFirstQuery = false
+			var queryAnswer httpAnswer
+			queryAnswer.In = csvLine
 
 			queryParams := make([]interface{}, len(csvLine))
 			for i := range csvLine {
@@ -110,35 +114,23 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) func(w
 
 			rows, err := queryStmt.Query(queryParams...)
 			if err != nil {
-				http.Error(w,
-					fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessage), http.StatusInternalServerError)
+				msg := fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessage)
+				http.Error(w, msg, http.StatusInternalServerError)
 				return
 			}
 			defer rows.Close()
 
 			cols, err := rows.Columns()
 			if err != nil {
-				http.Error(w,
-					fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessage), http.StatusInternalServerError)
+				msg := fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessage)
+				http.Error(w, msg, http.StatusInternalServerError)
 				return
 			}
 
-			// start printing a query result
-			fmt.Fprintf(w, `{"in":`)
-			outpoutEncoder.Encode(csvLine)
-			fmt.Fprintf(w, ",")
-			fmt.Fprintf(w, `"headers":`)
-			outpoutEncoder.Encode(cols)
-			fmt.Fprintf(w, `,"out":[`) // start printing the out rows array
+			queryAnswer.Headers = cols
+			queryAnswer.Out = make([][]interface{}, 0)
 
-			isFirstRow := true
 			for rows.Next() {
-				if !isFirstRow {
-					// print comma between rows
-					fmt.Fprintf(w, ",")
-				}
-				isFirstRow = false
-
 				row := make([]interface{}, len(cols))
 				pointers := make([]interface{}, len(row))
 
@@ -153,8 +145,7 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) func(w
 					return
 				}
 
-				// print a result row
-				outpoutEncoder.Encode(row)
+				queryAnswer.Out = append(queryAnswer.Out, row)
 			}
 			err = rows.Err()
 			if err != nil {
@@ -163,13 +154,30 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) func(w
 				return
 			}
 
-			// finish printing a query result
-			fmt.Fprintf(w, "]}")
+			answer = append(answer, queryAnswer)
 		}
 
-		// finish printing the outer array
-		fmt.Fprintf(w, "]\n")
-	}
+		// return json
+		w.Header().Add("Content-Type", "application/json")
+
+		answerJSON, err := json.Marshal(answer)
+		if err != nil {
+			http.Error(w,
+				fmt.Sprintf("\n\nError encoding json: %v\n\n%s", err, helpMessage),
+				http.StatusInternalServerError)
+			return
+		}
+
+		_, err = w.Write(answerJSON)
+		if err != nil {
+			log.Printf("Query: error 500 - cannot send json to client: %v\n", err)
+
+			http.Error(w,
+				fmt.Sprintf("\n\nError sending json to client: %v\n\n%s", err, helpMessage),
+				http.StatusInternalServerError)
+			return
+		}
+	}, nil
 }
 
 func buildHelpMessage(helpMessage string, queryString string, queryStmt *sql.Stmt, serverPort uint) string {
