@@ -78,7 +78,6 @@ func main() {
 
 func query(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Server", "SQLiteQueryServer v"+version)
-	// w.Header().Set("X-Content-Type-Options", "nosniff") // prevent browsers from doing MIME-type sniffing
 
 	if r.URL.Path != "/query" {
 		http.Error(w, helpMessage, http.StatusNotFound)
@@ -89,18 +88,10 @@ func query(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// wFlusher, ok := w.(http.Flusher)
-	// if !ok {
-	// 	http.Error(w,
-	// 		fmt.Sprintf("Error creating a stream writer.\n\n%s", helpMessage), http.StatusInternalServerError)
-	// 	return
-	// }
-
 	w.Header().Set("Content-Type", "application/json")
 	outpoutEncoder := json.NewEncoder(w)
 	// start printing the outer array
 	fmt.Fprintf(w, "[")
-	// wFlusher.Flush()
 
 	reqCsvReader := csv.NewReader(r.Body)
 	reqCsvReader.ReuseRecord = true
@@ -120,7 +111,6 @@ func query(w http.ResponseWriter, r *http.Request) {
 		if !isFirstQuery {
 			// print comma between queries results
 			fmt.Fprintf(w, ",")
-			// wFlusher.Flush()
 		}
 		isFirstQuery = false
 
@@ -151,14 +141,12 @@ func query(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintf(w, `"headers":`)
 		outpoutEncoder.Encode(cols)
 		fmt.Fprintf(w, `,"out":[`) // start printing the out rows array
-		// wFlusher.Flush()
 
 		isFirstRow := true
 		for rows.Next() {
 			if !isFirstRow {
 				// print comma between rows
 				fmt.Fprintf(w, ",")
-				// wFlusher.Flush()
 			}
 			isFirstRow = false
 
@@ -188,12 +176,10 @@ func query(w http.ResponseWriter, r *http.Request) {
 
 		// finish printing a query result
 		fmt.Fprintf(w, "]}")
-		// wFlusher.Flush()
 	}
 
 	// finish printing the outer array
 	fmt.Fprintf(w, "]\n")
-	// wFlusher.Flush()
 }
 
 func buildHelpMessage() {
