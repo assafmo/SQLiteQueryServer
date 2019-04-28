@@ -1,7 +1,7 @@
 debug
 debug.test
 SQLiteQueryServer*
-build
+release
 .vscode
 *wal
 *shm
