@@ -196,23 +196,7 @@ func TestAnswersRows(t *testing.T) {
 			}},
 	}
 
-	for i, v := range expectedAnswer {
-		if len(v.Out) != len(answer[i].Out) {
-			t.Fatalf(`len(v.Out) (%v) != len(answer[%d].Out) (%v)`, len(v.Out), i, len(answer[i].Out))
-		}
-
-		for rowI, rowV := range v.Out {
-			if len(rowV) != len(answer[i].Out[rowI]) {
-				t.Fatalf(`len(rowV) (%v) != len(answer[%d].Out[%d]) (%v)`, len(rowV), i, rowI, len(answer[i].Out[rowI]))
-			}
-
-			for cellI, cellV := range rowV {
-				if cellV != answer[i].Out[rowI][cellI] {
-					t.Fatalf(`cellV (%v) != answer[%d].Out[%d][%d] (%v)`, cellV, i, rowI, cellI, answer[i].Out[rowI][cellI])
-				}
-			}
-		}
-	}
+	compare(t, answer, expectedAnswer)
 }
 
 func TestMoreThanOneParam(t *testing.T) {
@@ -261,6 +245,65 @@ func TestMoreThanOneParam(t *testing.T) {
 			}},
 	}
 
+	compare(t, answer, expectedAnswer)
+}
+
+// func TestZeroParams(t *testing.T) {
+// 	log.SetOutput(&bytes.Buffer{})
+
+// 	reqString := "\n"
+
+// 	req := httptest.NewRequest("POST",
+// 		"http://example.org/query",
+// 		strings.NewReader(reqString))
+// 	w := httptest.NewRecorder()
+// 	queryHandler, err := initQueryHandler(testDbPath,
+// 		"SELECT * FROM ip_dns",
+// 		0)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+// 	queryHandler(w, req)
+
+// 	resp := w.Result()
+// 	defer resp.Body.Close()
+
+// 	if resp.StatusCode != http.StatusOK {
+// 		t.Fatalf(`resp.StatusCode (%d) != http.StatusOK (%d)`, resp.StatusCode, http.StatusOK)
+// 	}
+
+// 	if resp.Header.Get("Content-Type") != "application/json" {
+// 		t.Fatalf(`resp.Header.Get("Content-Type") (%s) != "application/json"`, resp.Header.Get("Content-Type"))
+// 	}
+
+// 	var answer []httpAnswer
+// 	decoder := json.NewDecoder(resp.Body)
+// 	err = decoder.Decode(&answer)
+// 	if err != nil {
+// 		t.Fatal(err)
+// 	}
+
+// 	expectedAnswer := []httpAnswer{
+// 		httpAnswer{
+// 			Out: [][]interface{}{
+// 				[]interface{}{"1.1.1.1", "one.one.one.one"},
+// 				[]interface{}{"8.8.8.8", "google-public-dns-a.google.com"},
+// 				[]interface{}{"192.30.253.112", "github.com"},
+// 				[]interface{}{"192.30.253.113", "github.com"},
+// 			}},
+// 		httpAnswer{
+// 			Out: [][]interface{}{
+// 				[]interface{}{"1.1.1.1", "one.one.one.one"},
+// 				[]interface{}{"8.8.8.8", "google-public-dns-a.google.com"},
+// 				[]interface{}{"192.30.253.112", "github.com"},
+// 				[]interface{}{"192.30.253.113", "github.com"},
+// 			}},
+// 	}
+
+// 	compare(t, answer, expectedAnswer)
+// }
+
+func compare(t *testing.T, answer []httpAnswer, expectedAnswer []httpAnswer) {
 	for i, v := range expectedAnswer {
 		if len(v.Out) != len(answer[i].Out) {
 			t.Fatalf(`len(v.Out) (%v) != len(answer[%d].Out) (%v)`, len(v.Out), i, len(answer[i].Out))

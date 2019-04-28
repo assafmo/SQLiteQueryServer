@@ -110,11 +110,7 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(
 			if err == io.EOF || err == http.ErrBodyReadAfterClose /* last line is without \n */ {
 				break
 			} else if err != nil {
-				http.Error(
-					w,
-					fmt.Sprintf("\n\nError reading request body: %v\n\n%s", err, helpMessage),
-					http.StatusInternalServerError,
-				)
+				http.Error(w, fmt.Sprintf("\n\nError reading request body: %v\n\n%s", err, helpMessage), http.StatusInternalServerError)
 				return
 			}
 
@@ -128,22 +124,14 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(
 
 			rows, err := queryStmt.Query(queryParams...)
 			if err != nil {
-				http.Error(
-					w,
-					fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessage),
-					http.StatusInternalServerError,
-				)
+				http.Error(w, fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessage), http.StatusInternalServerError)
 				return
 			}
 			defer rows.Close()
 
 			cols, err := rows.Columns()
 			if err != nil {
-				http.Error(
-					w,
-					fmt.Sprintf("\n\nError reading columns for query with params %#v: %v\n\n%s", csvLine, err, helpMessage),
-					http.StatusInternalServerError,
-				)
+				http.Error(w, fmt.Sprintf("\n\nError reading columns for query with params %#v: %v\n\n%s", csvLine, err, helpMessage), http.StatusInternalServerError)
 				return
 			}
 
@@ -160,11 +148,7 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(
 
 				err = rows.Scan(pointers...)
 				if err != nil {
-					http.Error(
-						w,
-						fmt.Sprintf("\n\nError reading query results for params %#v: %v\n\n%s", csvLine, err, helpMessage),
-						http.StatusInternalServerError,
-					)
+					http.Error(w, fmt.Sprintf("\n\nError reading query results for params %#v: %v\n\n%s", csvLine, err, helpMessage), http.StatusInternalServerError)
 					return
 				}
 
@@ -172,11 +156,7 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(
 			}
 			err = rows.Err()
 			if err != nil {
-				http.Error(
-					w,
-					fmt.Sprintf("\n\nError executing query: %v\n\n%s", err, helpMessage),
-					http.StatusInternalServerError,
-				)
+				http.Error(w, fmt.Sprintf("\n\nError executing query: %v\n\n%s", err, helpMessage), http.StatusInternalServerError)
 				return
 			}
 
@@ -188,21 +168,13 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(
 
 		answerJSON, err := json.Marshal(answer)
 		if err != nil {
-			http.Error(
-				w,
-				fmt.Sprintf("\n\nError encoding json: %v\n\n%s", err, helpMessage),
-				http.StatusInternalServerError,
-			)
+			http.Error(w, fmt.Sprintf("\n\nError encoding json: %v\n\n%s", err, helpMessage), http.StatusInternalServerError)
 			return
 		}
 
 		_, err = w.Write(answerJSON)
 		if err != nil {
-			http.Error(
-				w,
-				fmt.Sprintf("\n\nError sending json to client: %v\n\n%s", err, helpMessage),
-				http.StatusInternalServerError,
-			)
+			http.Error(w, fmt.Sprintf("\n\nError sending json to client: %v\n\n%s", err, helpMessage), http.StatusInternalServerError)
 			return
 		}
 	}, nil
