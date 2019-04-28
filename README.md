@@ -3,6 +3,8 @@
 Bulk query SQLite database over the network.  
 Way faster than [SQLiteProxy](https://github.com/assafmo/SQLiteProxy)!
 
+[![CircleCI](https://circleci.com/gh/assafmo/SQLiteQueryServer.svg?style=shield&circle-token=cda4af2f2b6cc0035287b25086c596d2ef44d9ce)](https://circleci.com/gh/assafmo/SQLiteQueryServer)
+[![Coverage Status](https://coveralls.io/repos/github/assafmo/SQLiteQueryServer/badge.svg?branch=master)](https://coveralls.io/github/assafmo/SQLiteQueryServer?branch=master)
 [![Go Report Card](https://goreportcard.com/badge/github.com/assafmo/SQLiteQueryServer)](https://goreportcard.com/report/github.com/assafmo/SQLiteQueryServer)
 
 # Installation
