@@ -89,25 +89,71 @@ func TestAnswersOrder(t *testing.T) {
 		t.Fatal(`len(resultsFromServer) != 3`)
 	}
 
-	if len(resultsFromServer[0].In) != 1 {
-		t.Fatal(`len(resultsFromServer[0].In) != 1`)
-	}
-	if len(resultsFromServer[1].In) != 1 {
-		t.Fatal(`len(resultsFromServer[1].In) != 1`)
-	}
-	if len(resultsFromServer[2].In) != 1 {
-		t.Fatal(`len(resultsFromServer[2].In) != 1`)
+	for i := 0; i < 2; i++ {
+		if len(resultsFromServer[i].In) != 1 {
+			t.Fatalf(`len(resultsFromServer[%d].In) != 1`, i)
+		}
 	}
 
-	if resultsFromServer[0].In[0] != "github.com" {
-		t.Fatal(`resultsFromServer[0].In[0] != "github.com"`)
+	for i, v := range []string{"github.com", "one.one.one.one", "google-public-dns-a.google.com"} {
+		if resultsFromServer[i].In[0] != v {
+			t.Fatalf(`resultsFromServer[%d].In[0] != "%s"`, i, v)
+		}
 	}
-	if resultsFromServer[1].In[0] != "one.one.one.one" {
-		t.Fatal(`resultsFromServer[1].In[0] != "one.one.one.one"`)
+}
+
+func TestAnswersHeaders(t *testing.T) {
+	log.SetOutput(&bytes.Buffer{})
+
+	reqString := "github.com\none.one.one.one\ngoogle-public-dns-a.google.com"
+
+	req := httptest.NewRequest("POST",
+		"http://example.org/query",
+		strings.NewReader(reqString))
+	w := httptest.NewRecorder()
+	queryHandler, err := initQueryHandler(dbPath, "SELECT * FROM ip_dns WHERE dns = ?", 0)
+	if err != nil {
+		t.Fatal(err)
 	}
-	if resultsFromServer[2].In[0] != "google-public-dns-a.google.com" {
-		t.Fatal(`resultsFromServer[2].In[0] != "google-public-dns-a.google.com"`)
+	queryHandler(w, req)
+
+	resp := w.Result()
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf(`resp.StatusCode (%d) != http.StatusOK (%d)`, resp.StatusCode, http.StatusOK)
 	}
+
+	if resp.Header.Get("Content-Type") != "application/json" {
+		t.Fatalf(`resp.Header.Get("Content-Type") (%s) != "application/json"`, resp.Header.Get("Content-Type"))
+	}
+
+	var resultsFromServer []httpAnswer
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&resultsFromServer)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(resultsFromServer) != 3 {
+		t.Fatal(`len(resultsFromServer) != 3`)
+	}
+
+	for i := 0; i < 2; i++ {
+		if len(resultsFromServer[i].Headers) != 2 {
+			t.Fatalf(`len(resultsFromServer[%d].Headers) != 2`, i)
+		}
+	}
+
+	for i := 0; i < 2; i++ {
+		if resultsFromServer[i].Headers[0] != "ip" {
+			t.Fatalf(`resultsFromServer[%d].In[0] != "ip"`, i)
+		}
+		if resultsFromServer[i].Headers[1] != "dns" {
+			t.Fatalf(`resultsFromServer[%d].In[1] != "dns"`, i)
+		}
+	}
+
 }
 
 func TestBadParamsCount(t *testing.T) {
