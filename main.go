@@ -28,7 +28,7 @@ func main() {
 
 func cmd(cmdArgs []string) error {
 	// Parse cmd args
-	var flagSet = flag.NewFlagSet("cmd flags", flag.ExitOnError)
+	var flagSet = flag.NewFlagSet("cmd flags", flag.ContinueOnError)
 
 	var dbPath string
 	var queryString string
@@ -38,7 +38,10 @@ func cmd(cmdArgs []string) error {
 	flagSet.StringVar(&queryString, "query", "", "SQL query to prepare for")
 	flagSet.UintVar(&serverPort, "port", 80, "HTTP port to listen on")
 
-	flagSet.Parse(cmdArgs)
+	err := flagSet.Parse(cmdArgs)
+	if err != nil {
+		return err
+	}
 
 	// Init db and query
 	queryHandler, err := initQueryHandler(dbPath, queryString, serverPort)
