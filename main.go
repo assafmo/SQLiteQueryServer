@@ -11,7 +11,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
 
 	json "github.com/json-iterator/go"
 	_ "github.com/mattn/go-sqlite3"
@@ -202,11 +201,15 @@ func buildHelpMessage(helpMessage string, queryString string, queryStmt *sql.Stm
 
 `, queryString)
 
-	queryParamsCount := countParams(queryStmt, queryString)
-	helpMessage += fmt.Sprintf(`Params count (question marks in query):
+	queryParamsCount, err := countParams(queryStmt, queryString)
+	if err != nil {
+		log.Printf("Error extracting params count from query: %v\n", err)
+	} else {
+		helpMessage += fmt.Sprintf(`Params count (question marks in query):
 	%d
 
 `, queryParamsCount)
+	}
 
 	helpMessage += fmt.Sprintf(`Request examples:
 	$ echo -e "$QUERY1_PARAM1,$QUERY1_PARAM2\n$QUERY2_PARAM1,$QUERY2_PARAM2" curl "http://$ADDRESS:%d/query" --data-binary @-
@@ -259,13 +262,13 @@ func buildHelpMessage(helpMessage string, queryString string, queryStmt *sql.Stm
 	return helpMessage
 }
 
-func countParams(queryStmt *sql.Stmt, queryString string) int {
+func countParams(queryStmt *sql.Stmt, queryString string) (int, error) {
 	// Query with 0 params
 	rows, err := queryStmt.Query()
 	if err == nil {
 		// Query went fine, this means it has 0 params
 		rows.Close()
-		return 0
+		return 0, nil
 	}
 
 	// Query returned an error
@@ -276,18 +279,14 @@ func countParams(queryStmt *sql.Stmt, queryString string) int {
 		// This is weird
 		// queryStmt is prepared (compiled) so it is valid
 		// but yet there was an error executing queryStmt
-		// Return best guess
-		// TODO: Should we maybe return an error and kill the server?
-		return strings.Count(queryString, "?")
+		return 0, fmt.Errorf("Cannot extract params count from query error: %v", err)
 	}
 	count, err := strconv.Atoi(regexSubmatches[0][1])
 	if err != nil {
 		// This is even weirder
 		// The regex is \p{N}+ (unicode number sequence) and there was a match,
 		// but converting it from string to int returned an error
-		// Return best guess
-		// TODO: Should we maybe return an error and kill the server?
-		return strings.Count(queryString, "?")
+		return 0, fmt.Errorf(`Cannot convert \p{N}+ regex to int: %v`, err)
 	}
-	return count
+	return count, nil
 }
