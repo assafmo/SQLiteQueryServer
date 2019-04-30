@@ -440,3 +440,20 @@ func TestMainEmptyQueryParam(t *testing.T) {
 		t.Fatalf(`Should throw a "Must provide --query param" error: %v`, err)
 	}
 }
+
+func TestMainInvalidPort(t *testing.T) {
+	err := cmd([]string{
+		"--db",
+		testDbPath,
+		"--query",
+		"SELECT * FROM ip_dns WHERE dns = ?",
+		"--port",
+		"66000",
+	})
+	if err == nil {
+		t.Fatal(`Should throw an error`)
+	}
+	if err == nil || !strings.Contains(err.Error(), "invalid port") {
+		t.Fatalf(`Should throw a "invalid port" error: %v`, err)
+	}
+}
