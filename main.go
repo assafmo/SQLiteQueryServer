@@ -19,13 +19,14 @@ import (
 const version = "1.3.2"
 
 func main() {
-	err := cmd(os.Args[1:])
-	if err != nil {
+	if err := cmd(os.Args[1:]); err != nil {
 		log.Fatal(err)
 	}
 }
 
 func cmd(cmdArgs []string) error {
+	log.Printf("SQLiteQueryServer v%s\n", version)
+
 	// Parse cmd args
 	var flagSet = flag.NewFlagSet("cmd flags", flag.ContinueOnError)
 
