@@ -270,7 +270,7 @@ func countParams(queryStmt *sql.Stmt, queryString string) int {
 
 	// Query returned an error
 	// Parse the error to get the expected params count
-	regex := regexp.MustCompile(`sql: expected (\p{N}) arguments, got 0`)
+	regex := regexp.MustCompile(`sql: expected (\p{N}+) arguments, got 0`)
 	regexSubmatches := regex.FindAllStringSubmatch(err.Error(), 1)
 	if len(regexSubmatches) != 1 || len(regexSubmatches[0]) != 2 {
 		// This is weird
