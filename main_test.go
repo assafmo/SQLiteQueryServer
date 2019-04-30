@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"strings"
 	"testing"
 
@@ -416,6 +417,8 @@ func TestMainDbFileNotThere(t *testing.T) {
 }
 
 func TestMainEmptyDbParam(t *testing.T) {
+	log.SetOutput(&bytes.Buffer{})
+
 	err := cmd([]string{
 		"--query",
 		"SELECT * FROM ip_dns WHERE dns = ?",
@@ -429,6 +432,8 @@ func TestMainEmptyDbParam(t *testing.T) {
 }
 
 func TestMainEmptyQueryParam(t *testing.T) {
+	log.SetOutput(&bytes.Buffer{})
+
 	err := cmd([]string{
 		"--db",
 		testDbPath,
@@ -441,7 +446,9 @@ func TestMainEmptyQueryParam(t *testing.T) {
 	}
 }
 
-func TestMainInvalidPort(t *testing.T) {
+func TestMainPortOutOfRange(t *testing.T) {
+	log.SetOutput(&bytes.Buffer{})
+
 	err := cmd([]string{
 		"--db",
 		testDbPath,
@@ -455,5 +462,24 @@ func TestMainInvalidPort(t *testing.T) {
 	}
 	if err == nil || !strings.Contains(err.Error(), "invalid port") {
 		t.Fatalf(`Should throw a "invalid port" error: %v`, err)
+	}
+}
+
+func TestMainInvalidPort(t *testing.T) {
+	os.Stderr = nil
+
+	err := cmd([]string{
+		"--db",
+		testDbPath,
+		"--query",
+		"SELECT * FROM ip_dns WHERE dns = ?",
+		"--port",
+		"-1",
+	})
+	if err == nil {
+		t.Fatal(`Should throw an error`)
+	}
+	if err == nil || !strings.Contains(err.Error(), `invalid value "-1" for flag -port: parse error`) {
+		t.Fatalf(`Should throw a 'invalid value "-1" for flag -port: parse error' error: %v`, err)
 	}
 }
