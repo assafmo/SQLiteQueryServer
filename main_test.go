@@ -483,3 +483,20 @@ func TestMainInvalidPort(t *testing.T) {
 		t.Fatalf(`Should throw a 'invalid value "-1" for flag -port: parse error' error: %v`, err)
 	}
 }
+
+func TestMainInvalidQuery(t *testing.T) {
+	os.Stderr = nil
+
+	err := cmd([]string{
+		"--db",
+		testDbPath,
+		"--query",
+		"BANANA * FROM ip_dns WHERE dns = ?",
+	})
+	if err == nil {
+		t.Fatal(`Should throw an error`)
+	}
+	if err == nil || !strings.Contains(err.Error(), "syntax error") {
+		t.Fatalf(`Should throw a 'syntax error' error: %v`, err)
+	}
+}
