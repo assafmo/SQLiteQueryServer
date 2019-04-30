@@ -17,7 +17,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const version = "1.3.0"
+const version = "1.3.1"
 
 func main() {
 	err := cmd(os.Args[1:])
