@@ -93,6 +93,7 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Server", "SQLiteQueryServer v"+version)
 		w.Header().Set("Access-Control-Allow-Origin", "*")
+		w.Header().Set("X-Content-Type-Options", "nosniff")
 
 		if r.URL.Path != "/query" {
 			http.Error(w, helpMessage, http.StatusNotFound)
