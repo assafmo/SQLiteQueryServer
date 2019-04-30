@@ -78,7 +78,7 @@ func TestAnswersOrder(t *testing.T) {
 		t.Fatalf(`resp.Header.Get("Content-Type") (%s) != "application/json"`, resp.Header.Get("Content-Type"))
 	}
 
-	var fullResponse []queryAnswer
+	var fullResponse []queryResult
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&fullResponse)
 	if err != nil {
@@ -124,7 +124,7 @@ func TestAnswersHeaders(t *testing.T) {
 		t.Fatalf(`resp.Header.Get("Content-Type") (%s) != "application/json"`, resp.Header.Get("Content-Type"))
 	}
 
-	var fullResponse []queryAnswer
+	var fullResponse []queryResult
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&fullResponse)
 	if err != nil {
@@ -173,24 +173,24 @@ func TestAnswersRows(t *testing.T) {
 		t.Fatalf(`resp.Header.Get("Content-Type") (%s) != "application/json"`, resp.Header.Get("Content-Type"))
 	}
 
-	var fullResponse []queryAnswer
+	var fullResponse []queryResult
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&fullResponse)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expectedResponse := []queryAnswer{
-		queryAnswer{
+	expectedResponse := []queryResult{
+		queryResult{
 			Out: [][]interface{}{
 				[]interface{}{"192.30.253.112", "github.com"},
 				[]interface{}{"192.30.253.113", "github.com"},
 			}},
-		queryAnswer{
+		queryResult{
 			Out: [][]interface{}{
 				[]interface{}{"1.1.1.1", "one.one.one.one"},
 			}},
-		queryAnswer{
+		queryResult{
 			Out: [][]interface{}{
 				[]interface{}{"8.8.8.8", "google-public-dns-a.google.com"},
 			}},
@@ -227,19 +227,19 @@ func TestMoreThanOneParam(t *testing.T) {
 		t.Fatalf(`resp.Header.Get("Content-Type") (%s) != "application/json"`, resp.Header.Get("Content-Type"))
 	}
 
-	var fullResponse []queryAnswer
+	var fullResponse []queryResult
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&fullResponse)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expectedResponse := []queryAnswer{
-		queryAnswer{
+	expectedResponse := []queryResult{
+		queryResult{
 			Out: [][]interface{}{
 				[]interface{}{"192.30.253.112", "github.com"},
 			}},
-		queryAnswer{
+		queryResult{
 			Out: [][]interface{}{
 				[]interface{}{"1.1.1.1", "one.one.one.one"},
 			}},
@@ -303,7 +303,7 @@ func TestMoreThanOneParam(t *testing.T) {
 // 	compare(t, answer, expectedResponse)
 // }
 
-func compare(t *testing.T, answer []queryAnswer, expectedResponse []queryAnswer) {
+func compare(t *testing.T, answer []queryResult, expectedResponse []queryResult) {
 	for i, v := range expectedResponse {
 		if len(v.Out) != len(answer[i].Out) {
 			t.Fatalf(`len(v.Out) (%v) != len(answer[%d].Out) (%v)`, len(v.Out), i, len(answer[i].Out))

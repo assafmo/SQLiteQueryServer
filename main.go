@@ -56,7 +56,7 @@ func cmd(cmdArgs []string) error {
 	return err
 }
 
-type queryAnswer struct {
+type queryResult struct {
 	In      []string        `json:"in"`
 	Headers []string        `json:"headers"`
 	Out     [][]interface{} `json:"out"`
@@ -92,6 +92,7 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(
 
 	return func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Server", "SQLiteQueryServer v"+version)
+		w.Header().Set("Access-Control-Allow-Origin", "*")
 
 		if r.URL.Path != "/query" {
 			http.Error(w, helpMessage, http.StatusNotFound)
@@ -103,7 +104,7 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(
 		}
 
 		// Init fullResponse
-		fullResponse := []queryAnswer{}
+		fullResponse := []queryResult{}
 
 		reqCsvReader := csv.NewReader(r.Body)
 		reqCsvReader.FieldsPerRecord = -1
@@ -121,7 +122,7 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(
 
 			// Init queryResponse
 			// Set queryResponse.Headers to the query's params (the fields of the csv record)
-			var queryResponse queryAnswer
+			var queryResponse queryResult
 			queryResponse.In = csvRecord
 
 			queryParams := make([]interface{}, len(csvRecord))
