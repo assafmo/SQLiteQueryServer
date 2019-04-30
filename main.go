@@ -269,17 +269,24 @@ func countParams(queryStmt *sql.Stmt, queryString string) int {
 	}
 
 	// Query returned an error
-	// Parse the error to get expected params count
-	regex := regexp.MustCompile(`sql: expected (\d+) arguments, got 0`)
+	// Parse the error to get the expected params count
+	regex := regexp.MustCompile(`sql: expected (\p{N}) arguments, got 0`)
 	regexSubmatches := regex.FindAllStringSubmatch(err.Error(), 1)
 	if len(regexSubmatches) != 1 || len(regexSubmatches[0]) != 2 {
-		// This is weird, return best guess
+		// This is weird
+		// queryStmt is prepared (compiled) so it is valid
+		// but yet there was an error executing queryStmt
+		// Return best guess
+		// TODO: Should we maybe return an error and kill the server?
 		return strings.Count(queryString, "?")
 	}
 	count, err := strconv.Atoi(regexSubmatches[0][1])
 	if err != nil {
-		// This is weirder because the regex is \d+
+		// This is even weirder
+		// The regex is \p{N}+ (unicode number sequence) and there was a match,
+		// but converting it from string to int returned an error
 		// Return best guess
+		// TODO: Should we maybe return an error and kill the server?
 		return strings.Count(queryString, "?")
 	}
 	return count
