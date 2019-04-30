@@ -5,7 +5,7 @@
 set -e
 set -v
 
-go test -race ./...
+go test -race -cover ./...
 
 rm -rf release
 mkdir -p release
@@ -20,5 +20,5 @@ xgo --targets linux/amd64   --dest release --out SQLiteQueryServer-"${VERSION}" 
 (
     cd release
     find -type f | 
-    parallel --bar 'zip "$(echo "{}" | sed "s/.exe//").zip" "{}"'
+        parallel --bar 'zip "$(echo "{}" | sed "s/.exe//").zip" "{}" && rm -f "{}"'
 )
