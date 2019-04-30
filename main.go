@@ -27,7 +27,7 @@ func main() {
 }
 
 func cmd(cmdArgs []string) error {
-	// parse cmd args
+	// Parse cmd args
 	var flagSet = flag.NewFlagSet("cmd flags", flag.ExitOnError)
 
 	var dbPath string
@@ -40,13 +40,13 @@ func cmd(cmdArgs []string) error {
 
 	flagSet.Parse(cmdArgs)
 
-	// init db and query
+	// Init db and query
 	queryHandler, err := initQueryHandler(dbPath, queryString, serverPort)
 	if err != nil {
 		return err
 	}
 
-	// start server
+	// Start the server
 	log.Printf("Starting server on port %d...\n", serverPort)
 	log.Printf("Starting server with query '%s'...\n", queryString)
 
@@ -56,13 +56,15 @@ func cmd(cmdArgs []string) error {
 	return err
 }
 
-type httpAnswer struct {
+type queryAnswer struct {
 	In      []string        `json:"in"`
 	Headers []string        `json:"headers"`
 	Out     [][]interface{} `json:"out"`
 }
 
 func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(w http.ResponseWriter, r *http.Request), error) {
+	// Init db and query
+
 	if dbPath == "" {
 		return nil, fmt.Errorf("Must provide --db param")
 	}
@@ -100,44 +102,53 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(
 			return
 		}
 
-		answer := []httpAnswer{}
+		// Init fullResponse
+		fullResponse := []queryAnswer{}
 
 		reqCsvReader := csv.NewReader(r.Body)
 		reqCsvReader.FieldsPerRecord = -1
 
+		// Iterate over each query
 		for {
-			csvLine, err := reqCsvReader.Read()
-			if err == io.EOF || err == http.ErrBodyReadAfterClose /* last line is without \n */ {
+			csvRecord, err := reqCsvReader.Read()
+			if err == io.EOF || err == http.ErrBodyReadAfterClose {
+				// EOF || last line is without \n
 				break
 			} else if err != nil {
 				http.Error(w, fmt.Sprintf("\n\nError reading request body: %v\n\n%s", err, helpMessage), http.StatusInternalServerError)
 				return
 			}
 
-			var queryAnswer httpAnswer
-			queryAnswer.In = csvLine
+			// Init queryResponse
+			// Set queryResponse.Headers to the query's params (the fields of the csv record)
+			var queryResponse queryAnswer
+			queryResponse.In = csvRecord
 
-			queryParams := make([]interface{}, len(csvLine))
-			for i := range csvLine {
-				queryParams[i] = csvLine[i]
+			queryParams := make([]interface{}, len(csvRecord))
+			for i := range csvRecord {
+				queryParams[i] = csvRecord[i]
 			}
 
 			rows, err := queryStmt.Query(queryParams...)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvLine, err, helpMessage), http.StatusInternalServerError)
+				http.Error(w, fmt.Sprintf("\n\nError executing query for params %#v: %v\n\n%s", csvRecord, err, helpMessage), http.StatusInternalServerError)
 				return
 			}
 			defer rows.Close()
 
+			// Set queryResponse.Headers to the query's columns
+			// Init queryResponse.Out
 			cols, err := rows.Columns()
 			if err != nil {
-				http.Error(w, fmt.Sprintf("\n\nError reading columns for query with params %#v: %v\n\n%s", csvLine, err, helpMessage), http.StatusInternalServerError)
+				http.Error(w, fmt.Sprintf("\n\nError reading columns for query with params %#v: %v\n\n%s", csvRecord, err, helpMessage), http.StatusInternalServerError)
 				return
 			}
 
-			queryAnswer.Headers = cols
-			queryAnswer.Out = make([][]interface{}, 0)
+			queryResponse.Headers = cols
+			queryResponse.Out = make([][]interface{}, 0)
 
+			// Iterate over returned rows for this query
+			// Append each row to queryResponse.Out
 			for rows.Next() {
 				row := make([]interface{}, len(cols))
 				pointers := make([]interface{}, len(row))
@@ -148,11 +159,11 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(
 
 				err = rows.Scan(pointers...)
 				if err != nil {
-					http.Error(w, fmt.Sprintf("\n\nError reading query results for params %#v: %v\n\n%s", csvLine, err, helpMessage), http.StatusInternalServerError)
+					http.Error(w, fmt.Sprintf("\n\nError reading query results for params %#v: %v\n\n%s", csvRecord, err, helpMessage), http.StatusInternalServerError)
 					return
 				}
 
-				queryAnswer.Out = append(queryAnswer.Out, row)
+				queryResponse.Out = append(queryResponse.Out, row)
 			}
 			err = rows.Err()
 			if err != nil {
@@ -160,13 +171,13 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(
 				return
 			}
 
-			answer = append(answer, queryAnswer)
+			fullResponse = append(fullResponse, queryResponse)
 		}
 
-		// return json
+		// Return json
 		w.Header().Add("Content-Type", "application/json")
 
-		answerJSON, err := json.Marshal(answer)
+		answerJSON, err := json.Marshal(fullResponse)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("\n\nError encoding json: %v\n\n%s", err, helpMessage), http.StatusInternalServerError)
 			return
@@ -244,22 +255,27 @@ func buildHelpMessage(helpMessage string, queryString string, queryStmt *sql.Stm
 }
 
 func countParams(queryStmt *sql.Stmt, queryString string) int {
+	// Query with 0 params
 	rows, err := queryStmt.Query()
-	if err != nil {
-		regex := regexp.MustCompile(`sql: expected (\d+) arguments, got 0`)
-		regexSubmatches := regex.FindAllStringSubmatch(err.Error(), 1)
-		if len(regexSubmatches) != 1 || len(regexSubmatches[0]) != 2 {
-			// this is weird, return best guess
-			return strings.Count(queryString, "?")
-		}
-		count, err := strconv.Atoi(regexSubmatches[0][1])
-		if err != nil {
-			// this is weirder because the regex is \d+
-			// return best guess
-			return strings.Count(queryString, "?")
-		}
-		return count
+	if err == nil {
+		// Query went fine, this means it has 0 params
+		rows.Close()
+		return 0
 	}
-	rows.Close()
-	return 0
+
+	// Query returned an error
+	// Parse the error to get expected params count
+	regex := regexp.MustCompile(`sql: expected (\d+) arguments, got 0`)
+	regexSubmatches := regex.FindAllStringSubmatch(err.Error(), 1)
+	if len(regexSubmatches) != 1 || len(regexSubmatches[0]) != 2 {
+		// This is weird, return best guess
+		return strings.Count(queryString, "?")
+	}
+	count, err := strconv.Atoi(regexSubmatches[0][1])
+	if err != nil {
+		// This is weirder because the regex is \d+
+		// Return best guess
+		return strings.Count(queryString, "?")
+	}
+	return count
 }

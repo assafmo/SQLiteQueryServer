@@ -78,21 +78,21 @@ func TestAnswersOrder(t *testing.T) {
 		t.Fatalf(`resp.Header.Get("Content-Type") (%s) != "application/json"`, resp.Header.Get("Content-Type"))
 	}
 
-	var answer []httpAnswer
+	var fullResponse []queryAnswer
 	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&answer)
+	err = decoder.Decode(&fullResponse)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i := 0; i < 3; i++ {
-		if len(answer[i].In) != 1 {
+		if len(fullResponse[i].In) != 1 {
 			t.Fatalf(`len(answer[%d].In) != 1`, i)
 		}
 	}
 
 	for i, v := range []string{"github.com", "one.one.one.one", "google-public-dns-a.google.com"} {
-		if answer[i].In[0] != v {
+		if fullResponse[i].In[0] != v {
 			t.Fatalf(`answer[%d].In[0] != "%s"`, i, v)
 		}
 	}
@@ -124,24 +124,24 @@ func TestAnswersHeaders(t *testing.T) {
 		t.Fatalf(`resp.Header.Get("Content-Type") (%s) != "application/json"`, resp.Header.Get("Content-Type"))
 	}
 
-	var answer []httpAnswer
+	var fullResponse []queryAnswer
 	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&answer)
+	err = decoder.Decode(&fullResponse)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	for i := 0; i < 3; i++ {
-		if len(answer[i].Headers) != 2 {
+		if len(fullResponse[i].Headers) != 2 {
 			t.Fatalf(`len(answer[%d].Headers) != 2`, i)
 		}
 	}
 
 	for i := 0; i < 3; i++ {
-		if answer[i].Headers[0] != "ip" {
+		if fullResponse[i].Headers[0] != "ip" {
 			t.Fatalf(`answer[%d].In[0] != "ip"`, i)
 		}
-		if answer[i].Headers[1] != "dns" {
+		if fullResponse[i].Headers[1] != "dns" {
 			t.Fatalf(`answer[%d].In[1] != "dns"`, i)
 		}
 	}
@@ -173,30 +173,30 @@ func TestAnswersRows(t *testing.T) {
 		t.Fatalf(`resp.Header.Get("Content-Type") (%s) != "application/json"`, resp.Header.Get("Content-Type"))
 	}
 
-	var answer []httpAnswer
+	var fullResponse []queryAnswer
 	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&answer)
+	err = decoder.Decode(&fullResponse)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expectedAnswer := []httpAnswer{
-		httpAnswer{
+	expectedResponse := []queryAnswer{
+		queryAnswer{
 			Out: [][]interface{}{
 				[]interface{}{"192.30.253.112", "github.com"},
 				[]interface{}{"192.30.253.113", "github.com"},
 			}},
-		httpAnswer{
+		queryAnswer{
 			Out: [][]interface{}{
 				[]interface{}{"1.1.1.1", "one.one.one.one"},
 			}},
-		httpAnswer{
+		queryAnswer{
 			Out: [][]interface{}{
 				[]interface{}{"8.8.8.8", "google-public-dns-a.google.com"},
 			}},
 	}
 
-	compare(t, answer, expectedAnswer)
+	compare(t, fullResponse, expectedResponse)
 }
 
 func TestMoreThanOneParam(t *testing.T) {
@@ -227,25 +227,25 @@ func TestMoreThanOneParam(t *testing.T) {
 		t.Fatalf(`resp.Header.Get("Content-Type") (%s) != "application/json"`, resp.Header.Get("Content-Type"))
 	}
 
-	var answer []httpAnswer
+	var fullResponse []queryAnswer
 	decoder := json.NewDecoder(resp.Body)
-	err = decoder.Decode(&answer)
+	err = decoder.Decode(&fullResponse)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expectedAnswer := []httpAnswer{
-		httpAnswer{
+	expectedResponse := []queryAnswer{
+		queryAnswer{
 			Out: [][]interface{}{
 				[]interface{}{"192.30.253.112", "github.com"},
 			}},
-		httpAnswer{
+		queryAnswer{
 			Out: [][]interface{}{
 				[]interface{}{"1.1.1.1", "one.one.one.one"},
 			}},
 	}
 
-	compare(t, answer, expectedAnswer)
+	compare(t, fullResponse, expectedResponse)
 }
 
 // func TestZeroParams(t *testing.T) {
@@ -283,7 +283,7 @@ func TestMoreThanOneParam(t *testing.T) {
 // 		t.Fatal(err)
 // 	}
 
-// 	expectedAnswer := []httpAnswer{
+// 	expectedResponse := []httpAnswer{
 // 		httpAnswer{
 // 			Out: [][]interface{}{
 // 				[]interface{}{"1.1.1.1", "one.one.one.one"},
@@ -300,11 +300,11 @@ func TestMoreThanOneParam(t *testing.T) {
 // 			}},
 // 	}
 
-// 	compare(t, answer, expectedAnswer)
+// 	compare(t, answer, expectedResponse)
 // }
 
-func compare(t *testing.T, answer []httpAnswer, expectedAnswer []httpAnswer) {
-	for i, v := range expectedAnswer {
+func compare(t *testing.T, answer []queryAnswer, expectedResponse []queryAnswer) {
+	for i, v := range expectedResponse {
 		if len(v.Out) != len(answer[i].Out) {
 			t.Fatalf(`len(v.Out) (%v) != len(answer[%d].Out) (%v)`, len(v.Out), i, len(answer[i].Out))
 		}
