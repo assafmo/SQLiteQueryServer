@@ -5,6 +5,8 @@
 set -e
 set -v
 
+go get -v -u -t -d ./...
+
 go test -race -cover ./...
 
 rm -rf release
