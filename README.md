@@ -16,7 +16,16 @@ Way faster than [SQLiteProxy](https://github.com/assafmo/SQLiteProxy)!
   go get -u github.com/assafmo/SQLiteQueryServer
   ```
 
-  This package uses `github.com/mattn/go-sqlite3`. Compilation errors might be resolved by reading https://github.com/mattn/go-sqlite3#compilation. Also
+  This package uses `github.com/mattn/go-sqlite3`. Compilation errors might be resolved by reading https://github.com/mattn/go-sqlite3#compilation.
+
+- Or use Ubuntu PPA:
+
+  ```bash
+  curl -s --compressed https://assafmo.github.io/ppa/ubuntu/KEY.gpg | sudo apt-key add -
+  sudo curl -s --compressed -o /etc/apt/sources.list.d/assafmo.list https://assafmo.github.io/ppa/ubuntu/assafmo.list
+  sudo apt update
+  sudo apt install sqlitequeryserver
+  ```
 
 # Usage
 
