@@ -593,8 +593,32 @@ func TestCountParamsNotZero(t *testing.T) {
 				t.Fatal("Shouldn't throw an error")
 			}
 			if count != i {
-				t.Fatalf("should return %d", i)
+				t.Fatalf("Should return %d", i)
 			}
 		})
+	}
+}
+
+func TestCountParamsHandleDBError(t *testing.T) {
+	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?mode=rw&cache=shared&_journal_mode=WAL", testDbPath))
+	if err != nil {
+		t.Fatalf("Should open testDbPath (%s) just fine", testDbPath)
+	}
+
+	db.SetMaxOpenConns(1)
+
+	queryStmt, err := db.Prepare("select * from ip_dns")
+	if err != nil {
+		t.Fatal("Should prepare query just fine")
+	}
+
+	db.Close()
+
+	count, err := countParams(queryStmt)
+	if count != -1 {
+		t.Fatal("Count should equal -1")
+	}
+	if err == nil || !strings.Contains(err.Error(), "Cannot extract params count from query error") {
+		t.Fatalf(`Should throw a 'syntax error' error: %v`, err)
 	}
 }
