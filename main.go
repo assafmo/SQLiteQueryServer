@@ -280,14 +280,14 @@ func countParams(queryStmt *sql.Stmt) (int, error) {
 		// This is weird
 		// queryStmt is prepared (compiled) so it is valid
 		// but yet there was an error executing queryStmt
-		return 0, fmt.Errorf("Cannot extract params count from query error: %v", err)
+		return -1, fmt.Errorf("Cannot extract params count from query error: %v", err)
 	}
 	count, err := strconv.Atoi(regexSubmatches[0][1])
 	if err != nil {
 		// This is even weirder
 		// The regex is \p{N}+ (unicode number sequence) and there was a match,
 		// but converting it from string to int returned an error
-		return 0, fmt.Errorf(`Cannot convert \p{N}+ regex to int: %v`, err)
+		return -1, fmt.Errorf(`Cannot convert \p{N}+ regex to int: %v`, err)
 	}
 	return count, nil
 }
