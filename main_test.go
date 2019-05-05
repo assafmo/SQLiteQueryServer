@@ -2,7 +2,9 @@ package main
 
 import (
 	"bytes"
+	"database/sql"
 	"errors"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -539,5 +541,60 @@ func TestMainInvalidQuery(t *testing.T) {
 	}
 	if err == nil || !strings.Contains(err.Error(), "syntax error") {
 		t.Fatalf(`Should throw a 'syntax error' error: %v`, err)
+	}
+}
+
+func TestCountParamsZero(t *testing.T) {
+	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?mode=rw&cache=shared&_journal_mode=WAL", testDbPath))
+	if err != nil {
+		t.Fatalf("Should open testDbPath (%s) just fine", testDbPath)
+	}
+	defer db.Close()
+
+	db.SetMaxOpenConns(1)
+
+	queryStmt, err := db.Prepare("select * from ip_dns")
+	if err != nil {
+		t.Fatal("Should prepare query just fine")
+	}
+
+	count, err := countParams(queryStmt)
+	if err != nil {
+		t.Fatal("Shouldn't throw an error")
+	}
+	if count != 0 {
+		t.Fatal("should return 0")
+	}
+}
+
+func TestCountParamsNotZero(t *testing.T) {
+	db, err := sql.Open("sqlite3", fmt.Sprintf("file:%s?mode=rw&cache=shared&_journal_mode=WAL", testDbPath))
+	if err != nil {
+		t.Fatalf("Should open testDbPath (%s) just fine", testDbPath)
+	}
+	defer db.Close()
+
+	db.SetMaxOpenConns(1)
+
+	for i := 1; i <= 10; i++ {
+		t.Run(fmt.Sprintf("TestCount%dParams", i), func(t *testing.T) {
+			where := make([]string, i)
+			for j := 0; j < i; j++ {
+				where[j] = "ip = ?"
+			}
+
+			queryStmt, err := db.Prepare(fmt.Sprintf("select * from ip_dns where %s", strings.Join(where, " AND ")))
+			if err != nil {
+				t.Fatal("Should prepare query just fine")
+			}
+
+			count, err := countParams(queryStmt)
+			if err != nil {
+				t.Fatal("Shouldn't throw an error")
+			}
+			if count != i {
+				t.Fatalf("should return %d", i)
+			}
+		})
 	}
 }
