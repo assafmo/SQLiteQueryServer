@@ -202,7 +202,7 @@ func buildHelpMessage(helpMessage string, queryString string, queryStmt *sql.Stm
 
 `, queryString)
 
-	queryParamsCount, err := countParams(queryStmt, queryString)
+	queryParamsCount, err := countParams(queryStmt)
 	if err != nil {
 		log.Printf("Error extracting params count from query: %v\n", err)
 	} else {
@@ -263,7 +263,7 @@ func buildHelpMessage(helpMessage string, queryString string, queryStmt *sql.Stm
 	return helpMessage
 }
 
-func countParams(queryStmt *sql.Stmt, queryString string) (int, error) {
+func countParams(queryStmt *sql.Stmt) (int, error) {
 	// Query with 0 params
 	rows, err := queryStmt.Query()
 	if err == nil {
