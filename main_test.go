@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -398,6 +399,46 @@ func TestBadMethodRequest(t *testing.T) {
 
 	if resp.StatusCode != http.StatusMethodNotAllowed {
 		t.Fatalf(`resp.StatusCode (%d) != http.StatusMethodNotAllowed (%d)`, resp.StatusCode, http.StatusMethodNotAllowed)
+	}
+}
+
+type errReader int
+
+func (errReader) Read(p []byte) (n int, err error) {
+	return 0, errors.New("test error")
+}
+
+func TestBadBodySendRequest(t *testing.T) {
+	log.SetOutput(&bytes.Buffer{})
+
+	var reqBody errReader
+
+	req := httptest.NewRequest("POST",
+		"http://example.org/query",
+		reqBody)
+
+	w := httptest.NewRecorder()
+	queryHandler, err := initQueryHandler(testDbPath, "SELECT * FROM ip_dns WHERE dns = ?", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queryHandler(w, req)
+
+	resp := w.Result()
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusInternalServerError {
+		t.Fatalf(`resp.StatusCode (%d) != http.StatusInternalServerError (%d)`, resp.StatusCode, http.StatusInternalServerError)
+	}
+
+	respBytes, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+	respString := string(respBytes)
+
+	if !strings.Contains(respString, "Error reading request body: test error") {
+		t.Fatal(`Error string should contain "Error reading request body: test error"`)
 	}
 }
 
