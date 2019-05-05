@@ -282,7 +282,9 @@ func countParams(queryStmt *sql.Stmt) (int, error) {
 		// but yet there was an error executing queryStmt
 		return -1, fmt.Errorf("Cannot extract params count from query error: %v", err)
 	}
-	count, err := strconv.Atoi(regexSubmatches[0][1])
+
+	countString := regexSubmatches[0][1]
+	count, err := strconv.Atoi(countString)
 	if err != nil {
 		// This is even weirder
 		// The regex is \p{N}+ (unicode number sequence) and there was a match,
