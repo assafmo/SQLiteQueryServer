@@ -39,7 +39,7 @@ Usage of SQLiteQueryServer:
         SQL query to prepare for
 ```
 
-Note: SQLiteQueryServer is optimized for the SELECT command. Other commands such as INSERT, UPDATE, DELETE, CREATE, etc might be slow because SQLiteQueryServer doesn't use transactions (yet). Also, the response format and error messages from these commands can be odd or unexpected.
+Note: SQLiteQueryServer is optimized for the SELECT command. Other commands such as INSERT, UPDATE, DELETE, CREATE, etc might be slow because SQLiteQueryServer doesn't use transactions (yet). Also, the response format and error messages from these commands may be odd or unexpected.
 
 # Examples
 
