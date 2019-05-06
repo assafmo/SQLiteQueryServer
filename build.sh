@@ -38,6 +38,7 @@ Priority: optional
 Architecture: amd64
 Maintainer: Assaf Morami <assaf.morami@gmail.com>
 Homepage: https://github.com/assafmo/SQLiteQueryServer
+Installed-Size: $(ls -l --block-size=KB ./deb/bin/SQLiteQueryServer | awk '{print $5}' | tr -d 'kB')
 Description: Bulk query SQLite database over the network. 
 EOF
 
