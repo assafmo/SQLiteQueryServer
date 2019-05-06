@@ -17,7 +17,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-const version = "1.3.2"
+const version = "1.4.0"
 
 func main() {
 	if err := cmd(os.Args[1:]); err != nil {
