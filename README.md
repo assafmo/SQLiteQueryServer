@@ -75,6 +75,9 @@ curl "http://$ADDRESS:$PORT/query" -d "$PARAM_1,$PARAM_2,...,$PARAM_N"
 - Request body must not have a CSV header.
 - Each request body line is a different query.
 - Each param in a line corresponds to a query param (a question mark in the query string).
+- Static query (without any query params):
+  - The request must be a HTTP GET to "http://$ADDRESS:$PORT/query".
+  - The query executes only once.
 
 ## Getting a response
 
@@ -109,3 +112,30 @@ echo -e "github.com\none.one.one.one\ngoogle-public-dns-a.google.com" | curl "ht
   - Has an "headers" field which is an array of headers of the SQL query result.
   - Has an "out" field which is an array of arrays of results. Each inner array is a result row.
 - Element #1 is the result of query #1, Element #2 is the result of query #2, and so forth.
+- Static query (without any query params):
+  - The response JSON has only one element.
+
+## Static query
+
+```bash
+SQLiteQueryServer --db ./test_db/ip_dns.db --query "SELECT * FROM ip_dns" --port 8080
+```
+
+```bash
+curl "http://localhost:8080/query"
+```
+
+```json
+[
+  {
+    "in": [],
+    "headers": ["ip", "dns"],
+    "out": [
+      ["1.1.1.1", "one.one.one.one"],
+      ["8.8.8.8", "google-public-dns-a.google.com"],
+      ["192.30.253.112", "github.com"],
+      ["192.30.253.113", "github.com"]
+    ]
+  }
+]
+```

@@ -11,6 +11,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 
 	json "github.com/json-iterator/go"
 	_ "github.com/mattn/go-sqlite3"
@@ -26,6 +27,7 @@ func main() {
 
 func cmd(cmdArgs []string) error {
 	log.Printf("SQLiteQueryServer v%s\n", version)
+	log.Println("https://github.com/assafmo/SQLiteQueryServer")
 
 	// Parse cmd args
 	var flagSet = flag.NewFlagSet("cmd flags", flag.ContinueOnError)
@@ -102,7 +104,7 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(
 			http.Error(w, helpMessage, http.StatusNotFound)
 			return
 		}
-		if r.Method != "POST" {
+		if r.Method != "POST" && r.Method != "GET" {
 			http.Error(w, helpMessage, http.StatusMethodNotAllowed)
 			return
 		}
@@ -110,18 +112,30 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(
 		// Init fullResponse
 		fullResponse := []queryResult{}
 
-		reqCsvReader := csv.NewReader(r.Body)
+		var reqCsvReader *csv.Reader
+		if r.Method == "GET" {
+			// Static query
+			reqCsvReader = csv.NewReader(strings.NewReader(""))
+		} else {
+			// Parameterized query
+			reqCsvReader = csv.NewReader(r.Body)
+		}
 		reqCsvReader.FieldsPerRecord = -1
 
 		// Iterate over each query
 		for {
 			csvRecord, err := reqCsvReader.Read()
-			if err == io.EOF || err == http.ErrBodyReadAfterClose {
-				// EOF || last line is without \n
-				break
-			} else if err != nil {
-				http.Error(w, fmt.Sprintf("\n\nError reading request body: %v\n\n%s", err, helpMessage), http.StatusInternalServerError)
-				return
+			if r.Method == "POST" {
+				// Parameterized query
+				if err == io.EOF || err == http.ErrBodyReadAfterClose {
+					// EOF || last line is without \n
+					break
+				} else if err != nil {
+					http.Error(w, fmt.Sprintf("\n\nError reading request body: %v\n\n%s", err, helpMessage), http.StatusInternalServerError)
+					return
+				}
+			} else {
+				csvRecord = make([]string, 0)
 			}
 
 			// Init queryResponse
@@ -177,6 +191,11 @@ func initQueryHandler(dbPath string, queryString string, serverPort uint) (func(
 			}
 
 			fullResponse = append(fullResponse, queryResponse)
+
+			if r.Method == "GET" {
+				// Static query - execute only once
+				break
+			}
 		}
 
 		// Return json
@@ -221,8 +240,11 @@ func buildHelpMessage(helpMessage string, queryString string, queryStmt *sql.Stm
 	- Request body must not have a CSV header.
 	- Each request body line is a different query.
 	- Each param in a line corresponds to a query param (a question mark in the query string).
+	- Static query (without any query params):
+		- The request must be a HTTP GET to "http://$ADDRESS:%d/query".
+		- The query executes only once.
 
-`, serverPort, serverPort, serverPort)
+`, serverPort, serverPort, serverPort, serverPort)
 
 	helpMessage += fmt.Sprintf(`Response example:
 	$ echo -e "github.com\none.one.one.one\ngoogle-public-dns-a.google.com" | curl "http://$ADDRESS:%d/query" --data-binary @-
@@ -258,6 +280,10 @@ func buildHelpMessage(helpMessage string, queryString string, queryStmt *sql.Stm
 		- Has an "headers" fields which is an array of headers of the SQL query result.
 		- Has an "out" field which is an array of arrays of results. Each inner array is a result row.
 	- Element #1 is the result of query #1, Element #2 is the result of query #2, and so forth.
+	- Static query (without any query params):
+		- The response JSON has only one element.
+
+For more info visit https://github.com/assafmo/SQLiteQueryServer
 `, serverPort)
 
 	return helpMessage

@@ -252,60 +252,49 @@ func TestMoreThanOneParam(t *testing.T) {
 	compare(t, fullResponse, expectedResponse)
 }
 
-// func TestZeroParams(t *testing.T) {
-// 	log.SetOutput(&bytes.Buffer{})
+func TestZeroParams(t *testing.T) {
+	log.SetOutput(&bytes.Buffer{})
 
-// 	reqString := "\n"
+	req := httptest.NewRequest("GET",
+		"http://example.org/query",
+		nil)
+	w := httptest.NewRecorder()
+	queryHandler, err := initQueryHandler(testDbPath, "SELECT * FROM ip_dns", 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	queryHandler(w, req)
 
-// 	req := httptest.NewRequest("POST",
-// 		"http://example.org/query",
-// 		strings.NewReader(reqString))
-// 	w := httptest.NewRecorder()
-// 	queryHandler, err := initQueryHandler(testDbPath,
-// 		"SELECT * FROM ip_dns",
-// 		0)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
-// 	queryHandler(w, req)
+	resp := w.Result()
+	defer resp.Body.Close()
 
-// 	resp := w.Result()
-// 	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		t.Fatalf(`resp.StatusCode (%d) != http.StatusOK (%d)`, resp.StatusCode, http.StatusOK)
+	}
 
-// 	if resp.StatusCode != http.StatusOK {
-// 		t.Fatalf(`resp.StatusCode (%d) != http.StatusOK (%d)`, resp.StatusCode, http.StatusOK)
-// 	}
+	if resp.Header.Get("Content-Type") != "application/json" {
+		t.Fatalf(`resp.Header.Get("Content-Type") (%s) != "application/json"`, resp.Header.Get("Content-Type"))
+	}
 
-// 	if resp.Header.Get("Content-Type") != "application/json" {
-// 		t.Fatalf(`resp.Header.Get("Content-Type") (%s) != "application/json"`, resp.Header.Get("Content-Type"))
-// 	}
+	var answer []queryResult
+	decoder := json.NewDecoder(resp.Body)
+	err = decoder.Decode(&answer)
+	if err != nil {
+		t.Fatal(err)
+	}
 
-// 	var answer []httpAnswer
-// 	decoder := json.NewDecoder(resp.Body)
-// 	err = decoder.Decode(&answer)
-// 	if err != nil {
-// 		t.Fatal(err)
-// 	}
+	expectedResponse := []queryResult{
+		queryResult{
+			Out: [][]interface{}{
+				[]interface{}{"1.1.1.1", "one.one.one.one"},
+				[]interface{}{"8.8.8.8", "google-public-dns-a.google.com"},
+				[]interface{}{"192.30.253.112", "github.com"},
+				[]interface{}{"192.30.253.113", "github.com"},
+			}},
+	}
 
-// 	expectedResponse := []httpAnswer{
-// 		httpAnswer{
-// 			Out: [][]interface{}{
-// 				[]interface{}{"1.1.1.1", "one.one.one.one"},
-// 				[]interface{}{"8.8.8.8", "google-public-dns-a.google.com"},
-// 				[]interface{}{"192.30.253.112", "github.com"},
-// 				[]interface{}{"192.30.253.113", "github.com"},
-// 			}},
-// 		httpAnswer{
-// 			Out: [][]interface{}{
-// 				[]interface{}{"1.1.1.1", "one.one.one.one"},
-// 				[]interface{}{"8.8.8.8", "google-public-dns-a.google.com"},
-// 				[]interface{}{"192.30.253.112", "github.com"},
-// 				[]interface{}{"192.30.253.113", "github.com"},
-// 			}},
-// 	}
-
-// 	compare(t, answer, expectedResponse)
-// }
+	compare(t, answer, expectedResponse)
+}
 
 func compare(t *testing.T, answer []queryResult, expectedResponse []queryResult) {
 	for i, v := range expectedResponse {
@@ -386,7 +375,7 @@ func TestBadPathRequest(t *testing.T) {
 func TestBadMethodRequest(t *testing.T) {
 	log.SetOutput(&bytes.Buffer{})
 
-	req := httptest.NewRequest("GET",
+	req := httptest.NewRequest("PUT",
 		"http://example.org/query",
 		nil)
 	w := httptest.NewRecorder()
