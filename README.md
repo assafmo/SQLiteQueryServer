@@ -21,8 +21,8 @@ Way faster than [SQLiteProxy](https://github.com/assafmo/SQLiteProxy)!
 - Or use Ubuntu PPA:
 
   ```bash
-  curl -sL https://assafmo.github.io/ppa/ubuntu/KEY.gpg | sudo apt-key add -
-  sudo curl -sL -o /etc/apt/sources.list.d/assafmo.list https://assafmo.github.io/ppa/ubuntu/assafmo.list
+  curl -SsL https://assafmo.github.io/ppa/ubuntu/KEY.gpg | sudo apt-key add -
+  sudo curl -SsL -o /etc/apt/sources.list.d/assafmo.list https://assafmo.github.io/ppa/ubuntu/assafmo.list
   sudo apt update
   sudo apt install sqlitequeryserver
   ```
