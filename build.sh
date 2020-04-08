@@ -44,4 +44,5 @@ Description: Bulk query SQLite database over the network.
 EOF
 
     dpkg-deb --build ./deb/ .
+    rm -rf ./deb/
 )
