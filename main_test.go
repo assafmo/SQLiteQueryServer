@@ -185,18 +185,18 @@ func TestAnswersRows(t *testing.T) {
 	}
 
 	expectedResponse := []queryResult{
-		queryResult{
+		{
 			Out: [][]interface{}{
-				[]interface{}{"192.30.253.112", "github.com"},
-				[]interface{}{"192.30.253.113", "github.com"},
+				{"192.30.253.112", "github.com"},
+				{"192.30.253.113", "github.com"},
 			}},
-		queryResult{
+		{
 			Out: [][]interface{}{
-				[]interface{}{"1.1.1.1", "one.one.one.one"},
+				{"1.1.1.1", "one.one.one.one"},
 			}},
-		queryResult{
+		{
 			Out: [][]interface{}{
-				[]interface{}{"8.8.8.8", "google-public-dns-a.google.com"},
+				{"8.8.8.8", "google-public-dns-a.google.com"},
 			}},
 	}
 
@@ -239,13 +239,13 @@ func TestMoreThanOneParam(t *testing.T) {
 	}
 
 	expectedResponse := []queryResult{
-		queryResult{
+		{
 			Out: [][]interface{}{
-				[]interface{}{"192.30.253.112", "github.com"},
+				{"192.30.253.112", "github.com"},
 			}},
-		queryResult{
+		{
 			Out: [][]interface{}{
-				[]interface{}{"1.1.1.1", "one.one.one.one"},
+				{"1.1.1.1", "one.one.one.one"},
 			}},
 	}
 
@@ -284,12 +284,12 @@ func TestZeroParams(t *testing.T) {
 	}
 
 	expectedResponse := []queryResult{
-		queryResult{
+		{
 			Out: [][]interface{}{
-				[]interface{}{"1.1.1.1", "one.one.one.one"},
-				[]interface{}{"8.8.8.8", "google-public-dns-a.google.com"},
-				[]interface{}{"192.30.253.112", "github.com"},
-				[]interface{}{"192.30.253.113", "github.com"},
+				{"1.1.1.1", "one.one.one.one"},
+				{"8.8.8.8", "google-public-dns-a.google.com"},
+				{"192.30.253.112", "github.com"},
+				{"192.30.253.113", "github.com"},
 			}},
 	}
 
