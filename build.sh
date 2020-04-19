@@ -5,8 +5,6 @@
 set -e
 set -v
 
-go get -v -u -t -d ./...
-
 go test -race -cover ./...
 
 rm -rf release
@@ -14,11 +12,9 @@ mkdir -p release
 
 VERSION=$(git describe --tags $(git rev-list --tags --max-count=1))
 
-go get -u -v github.com/karalabe/xgo
-
-xgo --targets windows/amd64 --dest release --out SQLiteQueryServer-"${VERSION}" .
-xgo --targets linux/amd64   --dest release --out SQLiteQueryServer-"${VERSION}" --tags linux --ldflags "-extldflags -static" .
-xgo --targets darwin/amd64  --dest release --out SQLiteQueryServer-"${VERSION}" --tags darwin .
+xgo --targets windows/amd64 --dest release --out SQLiteQueryServer-"${VERSION}" --ldflags "-s -w" .
+xgo --targets linux/amd64   --dest release --out SQLiteQueryServer-"${VERSION}" --tags linux --ldflags "-s -w -extldflags -static" .
+xgo --targets darwin/amd64  --dest release --out SQLiteQueryServer-"${VERSION}" --tags darwin --ldflags "-s -w" .
 
 (
     # zip
